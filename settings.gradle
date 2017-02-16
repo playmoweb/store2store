@@ -1,1 +1,1 @@
-include ':app', ':store2store-library2', ':store2store-lib'
+include ':store2store-lib'
