@@ -181,6 +181,40 @@ public abstract class AbstractService<T> implements IService<T> {
     }
 
     @Override
+    public Observable<T> update(final T object, CustomObserver<T> otherSubscriber) {
+        final Subscription s = update(object)
+                .flatMap(new Func1<T, Observable<T>>() {
+                    @Override
+                    public Observable<T> call(T item) {
+                        return storage.insertOrUpdate(item);
+                    }
+                })
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.io())
+                .subscribe(new SimpleObserver<>(otherSubscriber));
+
+        subscriptions.add(s);
+        return Observable.just(object);
+    }
+
+    @Override
+    public Observable<List<T>> update(final List<T> objects, CustomObserver<List<T>> otherSubscriber) {
+        final Subscription s = update(objects)
+                .flatMap(new Func1<List<T>, Observable<List<T>>>() {
+                    @Override
+                    public Observable<List<T>> call(List<T> items) {
+                        return storage.insertOrUpdate(items);
+                    }
+                })
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.io())
+                .subscribe(new SimpleObserver<>(otherSubscriber));
+
+        subscriptions.add(s);
+        return storage.insertOrUpdate(objects);
+    }
+
+    @Override
     public Observable<Void> delete(final T object, CustomObserver<Void> otherSubscriber) {
         final Subscription s = delete(object)
                 .onErrorResumeNext(new Func1<Throwable, Observable<Void>>() {
@@ -291,6 +325,20 @@ public abstract class AbstractService<T> implements IService<T> {
      * @return
      */
     protected abstract Observable<List<T>> insert(List<T> items);
+
+    /**
+     *
+     * @param object
+     * @return
+     */
+    protected abstract Observable<T> update(T object);
+
+    /**
+     *
+     * @param items
+     * @return
+     */
+    protected abstract Observable<List<T>> update(List<T> items);
 
     /**
      *

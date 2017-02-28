@@ -56,6 +56,22 @@ public interface IService<T> {
     Observable<List<T>> insert(final List<T> objects, final CustomObserver<List<T>> otherSubscriber);
 
     /**
+     * Update one object
+     * @param otherSubscriber
+     * @param object
+     * @return
+     */
+    Observable<T> update(final T object, final CustomObserver<T> otherSubscriber);
+
+    /**
+     * Update all objects
+     * @param otherSubscriber
+     * @param objects
+     * @return
+     */
+    Observable<List<T>> update(final List<T> objects, final CustomObserver<List<T>> otherSubscriber);
+
+    /**
      * Delete one object
      * @param object
      * @param otherSubscriber

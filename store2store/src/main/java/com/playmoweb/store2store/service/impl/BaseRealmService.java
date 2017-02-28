@@ -59,6 +59,16 @@ public abstract class BaseRealmService<T extends RealmObject> extends AbstractSe
     }
 
     @Override
+    protected Observable<T> update(T object) {
+        return null;
+    }
+
+    @Override
+    protected Observable<List<T>> update(List<T> items) {
+        return null;
+    }
+
+    @Override
     protected Observable<Void> delete(List<T> items) {
         return null;
     }
