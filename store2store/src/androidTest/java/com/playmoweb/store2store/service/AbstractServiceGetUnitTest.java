@@ -36,6 +36,6 @@ public class AbstractServiceGetUnitTest {
 
     @Test
     public void getOne() throws Exception {
-        
+
     }
 }

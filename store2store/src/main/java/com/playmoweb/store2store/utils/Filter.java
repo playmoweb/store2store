@@ -23,8 +23,9 @@ public class Filter extends WeakHashMap<String, Filter.KeyValuePair> {
         add(key, FilterType.EQUAL, String.valueOf(value));
     }
 
-    public void add(String key, FilterType type, String value) {
+    public Filter add(String key, FilterType type, String value) {
         this.put(key, new KeyValuePair(type, value));
+        return this;
     }
 
     /**
