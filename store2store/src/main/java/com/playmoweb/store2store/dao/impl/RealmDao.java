@@ -41,11 +41,12 @@ public class RealmDao<T extends RealmObject> implements IDao<T> {
         query = filterToQuery(filter, query);
         T item = query.findFirst();
 
+        T copy = null;
         if(item != null) {
-            return Observable.just(realm.copyFromRealm(item));
-        } else {
-            return Observable.just(null);
+            realm.copyFromRealm(item);
         }
+        realm.close();
+        return Observable.just(copy);
     }
 
     /**
@@ -68,8 +69,10 @@ public class RealmDao<T extends RealmObject> implements IDao<T> {
         RealmQuery<T> query = realm.where(clazz);
         query = filterToQuery(filter, query);
         RealmResults<T> items = query.findAllSorted(sortingMode.key, convertToSort(sortingMode.sort));
+        List<T> copies = realm.copyFromRealm(items);
+        realm.close();
 
-        return Observable.just(realm.copyFromRealm(items));
+        return Observable.just(copies);
     }
 
     /**
@@ -82,8 +85,10 @@ public class RealmDao<T extends RealmObject> implements IDao<T> {
         realm.beginTransaction();
         T inserted = realm.copyToRealmOrUpdate(object);
         realm.commitTransaction();
+        T copy = realm.copyFromRealm(inserted);
+        realm.close();
 
-        return Observable.just(realm.copyFromRealm(inserted));
+        return Observable.just(copy);
     }
 
     /**
@@ -97,8 +102,10 @@ public class RealmDao<T extends RealmObject> implements IDao<T> {
         realm.beginTransaction();
         items = realm.copyToRealmOrUpdate(items);
         realm.commitTransaction();
+        List<T> copies = realm.copyFromRealm(items);
+        realm.close();
 
-        return Observable.just(realm.copyFromRealm(items));
+        return Observable.just(copies);
     }
 
     /**
@@ -130,6 +137,8 @@ public class RealmDao<T extends RealmObject> implements IDao<T> {
         realm.beginTransaction();
         realm.delete(clazz);
         realm.commitTransaction();
+        realm.close();
+
         return Observable.just(null);
     }
 
