@@ -55,7 +55,7 @@ public abstract class AbstractService<T> implements IService<T> {
      *************************************************************************/
 
     @Override
-    public Observable<List<T>> getAll(Filter filter, SortingMode sortingMode, CustomObserver<List<T>> otherSubscriber) {
+    public Observable<List<T>> getAll(final Filter filter, final SortingMode sortingMode, CustomObserver<List<T>> otherSubscriber) {
         final Subscription s = getAll(filter, sortingMode)
                 .flatMap(new Func1<List<T>, Observable<List<T>>>() {
                     @Override
@@ -71,7 +71,8 @@ public abstract class AbstractService<T> implements IService<T> {
                 .flatMap(new Func1<List<T>, Observable<List<T>>>() {
                     @Override
                     public Observable<List<T>> call(List<T> ts) {
-                        return storage.insertOrUpdate(ts);
+                        storage.insertOrUpdate(ts);
+                        return storage.getAll(filter, sortingMode);
                     }
                 })
                 .observeOn(AndroidSchedulers.mainThread())
