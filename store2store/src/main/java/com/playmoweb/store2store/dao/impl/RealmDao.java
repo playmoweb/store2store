@@ -39,8 +39,15 @@ public class RealmDao<T extends RealmObject> implements IDao<T> {
 
         RealmQuery<T> query = realm.where(clazz);
         query = filterToQuery(filter, query);
-        RealmResults<T> items = query.findAllSorted(sortingMode.key, convertToSort(sortingMode.sort));
-        T item = items.first();
+
+        T item;
+
+        if(sortingMode != null) {
+            RealmResults<T> items = query.findAllSorted(sortingMode.key, convertToSort(sortingMode.sort));
+            item = items.first();
+        } else {
+            item = query.findFirst();
+        }
 
         T copy = null;
         if(item != null) {
@@ -70,7 +77,13 @@ public class RealmDao<T extends RealmObject> implements IDao<T> {
         Realm realm = Realm.getDefaultInstance();
         RealmQuery<T> query = realm.where(clazz);
         query = filterToQuery(filter, query);
-        RealmResults<T> items = query.findAllSorted(sortingMode.key, convertToSort(sortingMode.sort));
+
+        RealmResults<T> items;
+        if(sortingMode != null) {
+            items = query.findAllSorted(sortingMode.key, convertToSort(sortingMode.sort));
+        } else {
+            items = query.findAll();
+        }
         List<T> copies = realm.copyFromRealm(items);
         realm.close();
 
