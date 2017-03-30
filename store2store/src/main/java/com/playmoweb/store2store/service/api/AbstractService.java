@@ -150,7 +150,7 @@ public abstract class AbstractService<T> implements IService<T> {
                 .subscribe(new SimpleObserver<>(otherSubscriber));
 
         subscriptions.add(s);
-        return Observable.just(object);
+        return storage.insertOrUpdate(object);
     }
 
     @Override
