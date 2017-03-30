@@ -39,13 +39,15 @@ public class RealmDao<T extends RealmObject> implements IDao<T> {
 
         RealmQuery<T> query = realm.where(clazz);
         query = filterToQuery(filter, query);
-        T item = query.findFirst();
+        RealmResults<T> items = query.findAllSorted(sortingMode.key, convertToSort(sortingMode.sort));
+        T item = items.first();
 
         T copy = null;
         if(item != null) {
-            realm.copyFromRealm(item);
+            copy = realm.copyFromRealm(item);
         }
         realm.close();
+
         return Observable.just(copy);
     }
 
