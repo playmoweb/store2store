@@ -1,6 +1,6 @@
-package com.playmoweb.store2store.service.api;
+package com.playmoweb.store2store.service;
 
-import com.playmoweb.store2store.dao.api.IDao;
+import com.playmoweb.store2store.dao.IStoreDao;
 import com.playmoweb.store2store.utils.CustomObserver;
 import com.playmoweb.store2store.utils.Filter;
 import com.playmoweb.store2store.utils.SimpleObserver;
@@ -30,7 +30,7 @@ public abstract class AbstractService<T> implements IService<T> {
     /**
      * The storage used by this manager
      */
-    private IDao<T> storage;
+    private IStoreDao<T> storage;
 
     /**
      * A local subscription to handle local observers
@@ -41,12 +41,12 @@ public abstract class AbstractService<T> implements IService<T> {
      * Public constructor
      * @param clazz
      */
-    public AbstractService(Class<T> clazz, IDao<T> storage) {
+    public AbstractService(Class<T> clazz, IStoreDao<T> storage) {
         this.clazz = clazz;
         this.storage = storage;
     }
 
-    public IDao<T> getStorage() {
+    public IStoreDao<T> getStorage() {
         return storage;
     }
 

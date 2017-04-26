@@ -1,4 +1,4 @@
-package com.playmoweb.store2store.dao.api;
+package com.playmoweb.store2store.dao;
 
 import com.playmoweb.store2store.utils.Filter;
 import com.playmoweb.store2store.utils.SortingMode;
@@ -13,7 +13,7 @@ import rx.Observable;
  * @by      Playmoweb
  * @date    08/02/2017.
  */
-public interface IDao<T> {
+public interface IStoreDao<T> {
     /**
      *
      * @param filter

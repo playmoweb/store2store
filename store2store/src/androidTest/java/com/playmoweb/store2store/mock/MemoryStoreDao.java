@@ -1,6 +1,6 @@
 package com.playmoweb.store2store.mock;
 
-import com.playmoweb.store2store.dao.api.IDao;
+import com.playmoweb.store2store.dao.IStoreDao;
 import com.playmoweb.store2store.utils.Filter;
 import com.playmoweb.store2store.utils.SortingMode;
 
@@ -18,7 +18,7 @@ import rx.Observable;
  * @by      Playmoweb
  * @date    28/02/2017
  */
-public class MemoryDao implements IDao<TestModel> {
+public class MemoryStoreDao implements IStoreDao<TestModel> {
     private List<TestModel> models = new ArrayList<>();
 
     @Override

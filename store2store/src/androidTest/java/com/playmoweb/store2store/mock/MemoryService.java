@@ -1,6 +1,6 @@
 package com.playmoweb.store2store.mock;
 
-import com.playmoweb.store2store.service.api.AbstractService;
+import com.playmoweb.store2store.service.AbstractService;
 import com.playmoweb.store2store.utils.Filter;
 import com.playmoweb.store2store.utils.SortingMode;
 
@@ -16,7 +16,7 @@ import rx.Observable;
  */
 public class MemoryService extends AbstractService<TestModel> {
     // to simplify we use a second memory DAO to simulate another storage :)
-    private MemoryDao myCustomAPI = new MemoryDao();
+    private MemoryStoreDao myCustomAPI = new MemoryStoreDao();
 
     /**
      * Public constructor
@@ -24,7 +24,7 @@ public class MemoryService extends AbstractService<TestModel> {
      * @param clazz
      */
     public MemoryService(Class<TestModel> clazz) {
-        super(clazz, new MemoryDao());
+        super(clazz, new MemoryStoreDao());
     }
 
     @Override

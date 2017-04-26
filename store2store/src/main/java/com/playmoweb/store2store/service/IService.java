@@ -1,4 +1,4 @@
-package com.playmoweb.store2store.service.api;
+package com.playmoweb.store2store.service;
 
 import com.playmoweb.store2store.utils.CustomObserver;
 import com.playmoweb.store2store.utils.Filter;
