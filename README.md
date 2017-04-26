@@ -16,7 +16,7 @@ allprojects {
 
 ```
 # app/build.gradle file
-compile 'com.github.playmoweb:store2realm:<TAG>'
+compile 'com.github.playmoweb:store2store:<TAG>'
 ```
 
 
