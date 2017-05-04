@@ -49,7 +49,7 @@ public class Filter extends WeakHashMap<String, Filter.KeyValuePair> {
     /**
      * Immutable KeyValuePair class
      */
-    static class KeyValuePair<T> {
+    public static class KeyValuePair<T> {
         final FilterType filterType;
         final T value;
 
