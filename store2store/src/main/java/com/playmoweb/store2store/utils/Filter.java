@@ -50,8 +50,8 @@ public class Filter extends WeakHashMap<String, Filter.KeyValuePair> {
      * Immutable KeyValuePair class
      */
     public static class KeyValuePair<T> {
-        final FilterType filterType;
-        final T value;
+        public final FilterType filterType;
+        public final T value;
 
         KeyValuePair(FilterType ft, T v){
             value = v;
