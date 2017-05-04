@@ -38,7 +38,7 @@ public class MemoryService extends AbstractService<TestModel> {
     }
 
     @Override
-    protected Observable<TestModel> getById(String id) {
+    protected Observable<TestModel> getById(int id) {
         return myCustomAPI.getById(id);
     }
 

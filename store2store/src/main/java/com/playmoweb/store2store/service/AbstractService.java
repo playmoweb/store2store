@@ -30,7 +30,7 @@ public abstract class AbstractService<T> implements IService<T> {
     /**
      * The storage used by this manager
      */
-    private IStoreDao<T> storage;
+    private final IStoreDao<T> storage;
 
     /**
      * A local subscription to handle local observers
@@ -56,7 +56,7 @@ public abstract class AbstractService<T> implements IService<T> {
 
     @Override
     public Observable<List<T>> getAll(final Filter filter, final SortingMode sortingMode, CustomObserver<List<T>> otherSubscriber) {
-        final Subscription s = getAll(filter, sortingMode)
+        Observable<List<T>> observable = getAll(filter, sortingMode)
                 .flatMap(new Func1<List<T>, Observable<List<T>>>() {
                     @Override
                     public Observable<List<T>> call(final List<T> ts) {
@@ -74,12 +74,9 @@ public abstract class AbstractService<T> implements IService<T> {
                         storage.insertOrUpdate(ts);
                         return storage.getAll(filter, sortingMode);
                     }
-                })
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.io())
-                .subscribe(new SimpleObserver<>(otherSubscriber));
+                });
 
-        subscriptions.add(s);
+        subscribeNonNullObserver(observable, otherSubscriber);
         return storage.getAll(filter, sortingMode);
     }
 
@@ -88,46 +85,36 @@ public abstract class AbstractService<T> implements IService<T> {
     }
 
     @Override
-    public final Observable<T> getById(final String id, final CustomObserver<T> otherSubscriber) {
-        final Subscription s = getById(id)
+    public final Observable<T> getById(final int id, final CustomObserver<T> otherSubscriber) {
+        Observable<T> observable = getById(id)
                 .flatMap(new Func1<T, Observable<T>>() {
                     @Override
                     public Observable<T> call(T itemFromAsync) {
                         return storage.insertOrUpdate(itemFromAsync);
                     }
-                })
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.io())
-                .subscribe(new SimpleObserver<>(otherSubscriber));
+                });
 
-        subscriptions.add(s);
+        subscribeNonNullObserver(observable, otherSubscriber);
         return storage.getOne(new Filter("id", id), null);
-    }
-
-    public final Observable<T> getById(final int idValue, final CustomObserver<T> otherSubscriber) {
-        return getById(String.valueOf(idValue), otherSubscriber);
     }
 
     @Override
     public Observable<T> getOne(Filter filter, SortingMode sortingMode, CustomObserver<T> otherSubscriber) {
-        final Subscription s = getOne(filter, sortingMode)
+        Observable<T> observable = getOne(filter, sortingMode)
                 .flatMap(new Func1<T, Observable<T>>() {
                     @Override
                     public Observable<T> call(T itemFromAsync) {
                         return storage.insertOrUpdate(itemFromAsync);
                     }
-                })
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.io())
-                .subscribe(new SimpleObserver<>(otherSubscriber));
+                });
 
-        subscriptions.add(s);
+        subscribeNonNullObserver(observable, otherSubscriber);
         return storage.getOne(filter, sortingMode);
     }
 
     @Override
     public Observable<T> insert(final T object, CustomObserver<T> otherSubscriber) {
-        final Subscription s = insert(object)
+        Observable<T> observable = insert(object)
                 .onErrorResumeNext(new Func1<Throwable, Observable<T>>() {
                     @Override
                     public Observable<T> call(final Throwable throwable) {
@@ -144,18 +131,15 @@ public abstract class AbstractService<T> implements IService<T> {
                     public Observable<T> call(T item) {
                         return storage.insertOrUpdate(item);
                     }
-                })
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.io())
-                .subscribe(new SimpleObserver<>(otherSubscriber));
+                });
 
-        subscriptions.add(s);
+        subscribeNonNullObserver(observable, otherSubscriber);
         return storage.insertOrUpdate(object);
     }
 
     @Override
     public Observable<List<T>> insert(final List<T> objects, CustomObserver<List<T>> otherSubscriber) {
-        final Subscription s = insert(objects)
+        Observable<List<T>> observable = insert(objects)
                 .onErrorResumeNext(new Func1<Throwable, Observable<List<T>>>() {
                     @Override
                     public Observable<List<T>> call(final Throwable throwable) {
@@ -172,52 +156,43 @@ public abstract class AbstractService<T> implements IService<T> {
                     public Observable<List<T>> call(List<T> items) {
                         return storage.insertOrUpdate(items);
                     }
-                })
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.io())
-                .subscribe(new SimpleObserver<>(otherSubscriber));
+                });
 
-        subscriptions.add(s);
+        subscribeNonNullObserver(observable, otherSubscriber);
         return storage.insertOrUpdate(objects);
     }
 
     @Override
     public Observable<T> update(final T object, CustomObserver<T> otherSubscriber) {
-        final Subscription s = update(object)
+        Observable<T> observable = update(object)
                 .flatMap(new Func1<T, Observable<T>>() {
                     @Override
                     public Observable<T> call(T item) {
                         return storage.insertOrUpdate(item);
                     }
-                })
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.io())
-                .subscribe(new SimpleObserver<>(otherSubscriber));
+                });
 
-        subscriptions.add(s);
+        subscribeNonNullObserver(observable, otherSubscriber);
         return Observable.just(object);
     }
 
     @Override
     public Observable<List<T>> update(final List<T> objects, CustomObserver<List<T>> otherSubscriber) {
-        final Subscription s = update(objects)
+        Observable<List<T>> observable = update(objects)
                 .flatMap(new Func1<List<T>, Observable<List<T>>>() {
                     @Override
                     public Observable<List<T>> call(List<T> items) {
                         return storage.insertOrUpdate(items);
                     }
-                })
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.io())
-                .subscribe(new SimpleObserver<>(otherSubscriber));
+                });
 
-        subscriptions.add(s);
+        subscribeNonNullObserver(observable, otherSubscriber);
         return storage.insertOrUpdate(objects);
     }
 
     @Override
     public Observable<Void> delete(final T object, CustomObserver<Void> otherSubscriber) {
-        final Subscription s = delete(object)
+        Observable<Void> observable = delete(object)
                 .onErrorResumeNext(new Func1<Throwable, Observable<Void>>() {
                     @Override
                     public Observable<Void> call(final Throwable throwable) {
@@ -228,18 +203,15 @@ public abstract class AbstractService<T> implements IService<T> {
                             }
                         });
                     }
-                })
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.io())
-                .subscribe(new SimpleObserver<>(otherSubscriber));
+                });
 
-        subscriptions.add(s);
+        subscribeNonNullObserver(observable, otherSubscriber);
         return storage.delete(object);
     }
 
     @Override
     public Observable<Void> delete(final List<T> objects, CustomObserver<Void> otherSubscriber) {
-        final Subscription s = delete(objects)
+        Observable<Void> observable = delete(objects)
                 .onErrorResumeNext(new Func1<Throwable, Observable<Void>>() {
                     @Override
                     public Observable<Void> call(final Throwable throwable) {
@@ -250,18 +222,15 @@ public abstract class AbstractService<T> implements IService<T> {
                             }
                         });
                     }
-                })
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.io())
-                .subscribe(new SimpleObserver<>(otherSubscriber));
+                });
 
-        subscriptions.add(s);
+        subscribeNonNullObserver(observable, otherSubscriber);
         return storage.delete(objects);
     }
 
     @Override
     public Observable<Void> deleteAll(CustomObserver<Void> otherSubscriber) {
-        final Subscription s = deleteAll()
+        Observable<Void> observable = deleteAll()
                 .onErrorResumeNext(new Func1<Throwable, Observable<Void>>() {
                     @Override
                     public Observable<Void> call(final Throwable throwable) {
@@ -278,13 +247,28 @@ public abstract class AbstractService<T> implements IService<T> {
                             }
                         });
                     }
-                })
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.io())
-                .subscribe(new SimpleObserver<>(otherSubscriber));
+                });
 
-        subscriptions.add(s);
+        subscribeNonNullObserver(observable, otherSubscriber);
         return storage.deleteAll();
+    }
+
+    /**
+     * This method execute an observable only if the subscriber exists.
+     *
+     * @note The defaults schedulers are io() for subscribeOn and Android.mainThread() for observeOn.
+     * @param observable
+     * @param otherSubscriber
+     * @param <S>
+     */
+    private <S> void subscribeNonNullObserver(final Observable<S> observable, final CustomObserver<S> otherSubscriber) {
+        if(observable != null && otherSubscriber != null) {
+            final Subscription s = observable
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribeOn(Schedulers.io())
+                    .subscribe(new SimpleObserver<>(otherSubscriber));
+            subscriptions.add(s);
+        }
     }
 
     /**************************************************************************
@@ -311,7 +295,7 @@ public abstract class AbstractService<T> implements IService<T> {
      * @param id
      * @return
      */
-    protected abstract Observable<T> getById(String id);
+    protected abstract Observable<T> getById(int id);
 
     /**
      *

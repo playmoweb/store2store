@@ -30,7 +30,7 @@ public class MyStoreService<T> extends AbstractService<T> {
 }
 ```
 
-Or use one implemented on this library : 
+Have a look to existing implementations  : 
 
 - Realm : https://github.com/playmoweb/store2realm
 

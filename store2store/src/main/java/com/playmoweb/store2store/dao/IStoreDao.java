@@ -34,7 +34,7 @@ public interface IStoreDao<T> {
      * @param id
      * @return
      */
-    Observable<T> getById(String id);
+    Observable<T> getById(int id);
 
     /**
      *

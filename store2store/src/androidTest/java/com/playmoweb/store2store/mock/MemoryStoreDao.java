@@ -32,11 +32,10 @@ public class MemoryStoreDao implements IStoreDao<TestModel> {
     }
 
     @Override
-    public Observable<TestModel> getById(String id) {
-        int integerId = Integer.valueOf(id);
+    public Observable<TestModel> getById(int id) {
         TestModel t = null;
         for(TestModel tm : models) {
-            if(tm.getId() == integerId) {
+            if(tm.getId() == id) {
                 t = tm;
                 break;
             }

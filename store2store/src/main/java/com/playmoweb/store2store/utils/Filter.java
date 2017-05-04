@@ -1,5 +1,6 @@
 package com.playmoweb.store2store.utils;
 
+import java.util.List;
 import java.util.WeakHashMap;
 
 /**
@@ -8,9 +9,12 @@ import java.util.WeakHashMap;
 public class Filter extends WeakHashMap<String, Filter.KeyValuePair> {
     // TODO optimize access with a copy in an weak list
 
-    public <T> Filter(String key, T value) {
+    public Filter() {
         super();
-        add(key, FilterType.EQUAL, value);
+    }
+
+    public <T> Filter(String key, T value) {
+        this(key, FilterType.EQUAL, value);
     }
 
     public <T> Filter(String key, FilterType type, T value) {
@@ -18,19 +22,38 @@ public class Filter extends WeakHashMap<String, Filter.KeyValuePair> {
         add(key, type, value);
     }
 
+    public <T> Filter add(String key, T value) {
+        this.put(key, new KeyValuePair<>(FilterType.EQUAL, value));
+        return this;
+    }
+
     public <T> Filter add(String key, FilterType type, T value) {
         this.put(key, new KeyValuePair<>(type, value));
+        return this;
+    }
+
+    public <T> Filter add(String key, FilterType type, List<T> values) {
+        for(T value : values) {
+            this.put(key, new KeyValuePair<>(type, value));
+        }
+        return this;
+    }
+
+    public <T> Filter add(String key, FilterType type, T[] values) {
+        for(T value : values) {
+            this.put(key, new KeyValuePair<>(type, value));
+        }
         return this;
     }
 
     /**
      * Immutable KeyValuePair class
      */
-    public static class KeyValuePair<T> {
-        public final FilterType filterType;
-        public final T value;
+    static class KeyValuePair<T> {
+        final FilterType filterType;
+        final T value;
 
-        public KeyValuePair(FilterType ft, T v){
+        KeyValuePair(FilterType ft, T v){
             value = v;
             filterType = ft;
         }

@@ -29,7 +29,7 @@ public interface IService<T> {
      * @param otherSubscriber
      * @return
      */
-    Observable<T> getById(final String id, final CustomObserver<T> otherSubscriber);
+    Observable<T> getById(final int id, final CustomObserver<T> otherSubscriber);
 
     /**
      * Get one object for filter and sorting mode
