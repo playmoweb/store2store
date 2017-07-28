@@ -3,6 +3,7 @@ package com.playmoweb.store2store.service;
 import com.playmoweb.store2store.dao.IStoreDao;
 import com.playmoweb.store2store.utils.CustomObserver;
 import com.playmoweb.store2store.utils.Filter;
+import com.playmoweb.store2store.utils.NullObject;
 import com.playmoweb.store2store.utils.SimpleObserver;
 import com.playmoweb.store2store.utils.SortingMode;
 
@@ -65,9 +66,9 @@ public abstract class AbstractService<T> implements IService<T> {
                 .flatMap(new Function<List<T>, ObservableSource<List<T>>>() {
                     @Override
                     public ObservableSource<List<T>> apply(final List<T> ts) throws Exception {
-                        return storage.deleteAll().map(new Function<Void, List<T>>() {
+                        return storage.deleteAll().map(new Function<NullObject, List<T>>() {
                             @Override
-                            public List<T> apply(Void aVoid) throws Exception {
+                            public List<T> apply(NullObject aVoid) throws Exception {
                                 return ts;
                             }
                         });
@@ -122,9 +123,9 @@ public abstract class AbstractService<T> implements IService<T> {
                     @Override
                     public ObservableSource<T> apply(final Throwable throwable) throws Exception {
                         return storage.delete(object)
-                                .flatMap(new Function<Void, ObservableSource<T>>() {
+                                .flatMap(new Function<NullObject, ObservableSource<T>>() {
                                     @Override
-                                    public ObservableSource<T> apply(Void aVoid) throws Exception {
+                                    public ObservableSource<T> apply(NullObject aVoid) throws Exception {
                                         return Observable.error(throwable);
                                     }
                                 });
@@ -146,9 +147,9 @@ public abstract class AbstractService<T> implements IService<T> {
                 .onErrorResumeNext(new Function<Throwable, ObservableSource<List<T>>>() {
                     @Override
                     public ObservableSource<List<T>> apply(final Throwable throwable) throws Exception {
-                        return storage.delete(objects).flatMap(new Function<Void, ObservableSource<List<T>>>() {
+                        return storage.delete(objects).flatMap(new Function<NullObject, ObservableSource<List<T>>>() {
                             @Override
-                            public ObservableSource<List<T>> apply(Void aVoid) throws Exception {
+                            public ObservableSource<List<T>> apply(NullObject aVoid) throws Exception {
                                 return Observable.error(throwable);
                             }
                         });
@@ -191,15 +192,15 @@ public abstract class AbstractService<T> implements IService<T> {
     }
 
     @Override
-    public Observable<Void> delete(final T object, CustomObserver<Void> otherSubscriber) {
-        Observable<Void> observable = delete(object)
-                .onErrorResumeNext(new Function<Throwable, ObservableSource<Void>>() {
+    public Observable<NullObject> delete(final T object, CustomObserver<NullObject> otherSubscriber) {
+        Observable<NullObject> observable = delete(object)
+                .onErrorResumeNext(new Function<Throwable, ObservableSource<NullObject>>() {
                     @Override
-                    public ObservableSource<Void> apply(final Throwable throwable) throws Exception {
+                    public ObservableSource<NullObject> apply(final Throwable throwable) throws Exception {
                         return storage.insertOrUpdate(object)
-                                .flatMap(new Function<T, ObservableSource<Void>>() {
+                                .flatMap(new Function<T, ObservableSource<NullObject>>() {
                                     @Override
-                                    public ObservableSource<Void> apply(T item) throws Exception {
+                                    public ObservableSource<NullObject> apply(T item) throws Exception {
                                         return Observable.error(throwable);
                                     }
                                 });
@@ -210,15 +211,15 @@ public abstract class AbstractService<T> implements IService<T> {
     }
 
     @Override
-    public Observable<Void> delete(final List<T> objects, CustomObserver<Void> otherSubscriber) {
-        Observable<Void> observable = delete(objects)
-                .onErrorResumeNext(new Function<Throwable, ObservableSource<Void>>() {
+    public Observable<NullObject> delete(final List<T> objects, CustomObserver<NullObject> otherSubscriber) {
+        Observable<NullObject> observable = delete(objects)
+                .onErrorResumeNext(new Function<Throwable, ObservableSource<NullObject>>() {
                     @Override
-                    public ObservableSource<Void> apply(final Throwable throwable) throws Exception {
+                    public ObservableSource<NullObject> apply(final Throwable throwable) throws Exception {
                         return storage.insertOrUpdate(objects)
-                                .flatMap(new Function<List<T>, ObservableSource<Void>>() {
+                                .flatMap(new Function<List<T>, ObservableSource<NullObject>>() {
                                     @Override
-                                    public ObservableSource<Void> apply(List<T> ts) throws Exception {
+                                    public ObservableSource<NullObject> apply(List<T> ts) throws Exception {
                                         return Observable.error(throwable);
                                     }
                                 });
@@ -229,15 +230,15 @@ public abstract class AbstractService<T> implements IService<T> {
     }
 
     @Override
-    public Observable<Void> deleteAll(CustomObserver<Void> otherSubscriber) {
-        Observable<Void> observable = deleteAll()
-                .onErrorResumeNext(new Function<Throwable, ObservableSource<Void>>() {
+    public Observable<NullObject> deleteAll(CustomObserver<NullObject> otherSubscriber) {
+        Observable<NullObject> observable = deleteAll()
+                .onErrorResumeNext(new Function<Throwable, ObservableSource<NullObject>>() {
                     @Override
-                    public ObservableSource<Void> apply(final Throwable throwable) throws Exception {
+                    public ObservableSource<NullObject> apply(final Throwable throwable) throws Exception {
                         return getAll(null, null)
-                                .flatMap(new Function<List<T>, ObservableSource<Void>>() {
+                                .flatMap(new Function<List<T>, ObservableSource<NullObject>>() {
                                     @Override
-                                    public ObservableSource<Void> apply(List<T> ts) throws Exception {
+                                    public ObservableSource<NullObject> apply(List<T> ts) throws Exception {
                                         return Observable.error(throwable);
                                     }
                                 });
@@ -292,7 +293,7 @@ public abstract class AbstractService<T> implements IService<T> {
 
     /**
      *
-     * @param object
+     * @param item
      * @return
      */
     protected abstract Observable<T> insert(T item);
@@ -306,7 +307,7 @@ public abstract class AbstractService<T> implements IService<T> {
 
     /**
      *
-     * @param object
+     * @param item
      * @return
      */
     protected abstract Observable<T> update(T item);
@@ -322,16 +323,16 @@ public abstract class AbstractService<T> implements IService<T> {
      *
      * @param items
      */
-    protected abstract Observable<Void> delete(List<T> items);
+    protected abstract Observable<NullObject> delete(List<T> items);
 
     /**
      *
-     * @param object
+     * @param item
      */
-    protected abstract Observable<Void> delete(T item);
+    protected abstract Observable<NullObject> delete(T item);
 
     /**
      * Delete all stored instances
      */
-    protected abstract Observable<Void> deleteAll();
+    protected abstract Observable<NullObject> deleteAll();
 }

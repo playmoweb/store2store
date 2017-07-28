@@ -1,8 +1,6 @@
 package com.playmoweb.store2store.utils;
 
-import io.reactivex.Observer;
-import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.disposables.Disposable;
+import io.reactivex.observers.DisposableObserver;
 
 /**
  * This class replace the default observers used with RX to add more datas.
@@ -14,30 +12,7 @@ import io.reactivex.disposables.Disposable;
  * @updated hoanghiep
  * @date    28/07/2017
  */
-public abstract class CustomObserver<T> implements Observer<T> {
-    private final CompositeDisposable compositeDisposable;
-
-    /**
-     * Default constructor for CustomObserver
-     * @warn    Do not pass null if you don't override getCompositeDisposable() method.
-     * @param   compositeDisposable
-     */
-    public CustomObserver(CompositeDisposable compositeDisposable){
-        this.compositeDisposable = compositeDisposable;
-    }
-
-    /**
-     * Empty constructor of a CustomObserver
-     * @warn    You have to override the getCompositeDisposable to prevent NPE when subscribing !
-     */
-    public CustomObserver(){
-        this(null);
-    }
-
-    @Override
-    public void onSubscribe(Disposable d) {
-        getCompositeDisposable().add(d);
-    }
+public abstract class CustomObserver<T> extends DisposableObserver<T> {
 
     @Override
     public void onNext(T value) {
@@ -52,13 +27,6 @@ public abstract class CustomObserver<T> implements Observer<T> {
     @Override
     public void onComplete() {
         onComplete(false);
-    }
-
-    public CompositeDisposable getCompositeDisposable(){
-        if(compositeDisposable == null){
-            throw new NullPointerException("A custom observer need a CompositeDisposable to work properly. The reference given in the constructor is null.");
-        }
-        return compositeDisposable;
     }
 
     public void onComplete(boolean isUpdated) {

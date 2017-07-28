@@ -2,6 +2,7 @@ package com.playmoweb.store2store.mock;
 
 import com.playmoweb.store2store.dao.IStoreDao;
 import com.playmoweb.store2store.utils.Filter;
+import com.playmoweb.store2store.utils.NullObject;
 import com.playmoweb.store2store.utils.SortingMode;
 
 import java.util.ArrayList;
@@ -59,23 +60,23 @@ public class MemoryStoreDao implements IStoreDao<TestModel> {
     }
 
     @Override
-    public Observable<Void> delete(List<TestModel> items) {
+    public Observable<NullObject> delete(List<TestModel> items) {
         for(TestModel tm : models) {
             removeItemIfExists(tm);
         }
-        return Observable.just(null);
+        return Observable.just(new NullObject());
     }
 
     @Override
-    public Observable<Void> delete(TestModel object) {
+    public Observable<NullObject> delete(TestModel object) {
         removeItemIfExists(object);
-        return Observable.just(null);
+        return Observable.just(new NullObject());
     }
 
     @Override
-    public Observable<Void> deleteAll() {
+    public Observable<NullObject> deleteAll() {
         models.clear();
-        return Observable.just(null);
+        return Observable.just(new NullObject());
     }
 
 

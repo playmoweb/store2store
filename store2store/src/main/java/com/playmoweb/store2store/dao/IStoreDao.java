@@ -1,9 +1,11 @@
 package com.playmoweb.store2store.dao;
 
 import com.playmoweb.store2store.utils.Filter;
+import com.playmoweb.store2store.utils.NullObject;
 import com.playmoweb.store2store.utils.SortingMode;
 
 import java.util.List;
+
 import io.reactivex.Observable;
 
 /**
@@ -13,6 +15,7 @@ import io.reactivex.Observable;
  * @date    08/02/2017.
  */
 public interface IStoreDao<T> {
+
     /**
      *
      * @param filter
@@ -53,16 +56,16 @@ public interface IStoreDao<T> {
      *
      * @param items
      */
-    Observable<Void> delete(List<T> items);
+    Observable<NullObject> delete(List<T> items);
 
     /**
      *
      * @param object
      */
-    Observable<Void> delete(T object);
+    Observable<NullObject> delete(T object);
 
     /**
      * Delete all stored instances
      */
-    Observable<Void> deleteAll();
+    Observable<NullObject> deleteAll();
 }
