@@ -7,7 +7,7 @@ import com.playmoweb.store2store.utils.SortingMode;
 import java.util.ArrayList;
 import java.util.List;
 
-import rx.Observable;
+import io.reactivex.Observable;
 
 /**
  * Memory dao for tests purposes
