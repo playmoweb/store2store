@@ -13,6 +13,7 @@ import io.reactivex.ObservableSource;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.functions.Function;
+import io.reactivex.observers.DisposableObserver;
 import io.reactivex.schedulers.Schedulers;
 
 /**
@@ -256,11 +257,10 @@ public abstract class AbstractService<T> implements IService<T> {
      */
     private <S> void subscribeNonNullObserver(final Observable<S> observable, final CustomObserver<S> observer) {
         if (observable != null && observer != null) {
-            observable
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(new SimpleObserver<S>(observer));
-            compositeDisposable.add(observable.subscribe());
+            DisposableObserver obs = observable.subscribeOn(Schedulers.io())
+                      .observeOn(AndroidSchedulers.mainThread())
+                      .subscribeWith(new SimpleObserver<>(observer));
+            compositeDisposable.add(obs);
         }
     }
 
@@ -295,7 +295,7 @@ public abstract class AbstractService<T> implements IService<T> {
      * @param object
      * @return
      */
-    protected abstract Observable<T> insert(T object);
+    protected abstract Observable<T> insert(T item);
 
     /**
      *
@@ -309,7 +309,7 @@ public abstract class AbstractService<T> implements IService<T> {
      * @param object
      * @return
      */
-    protected abstract Observable<T> update(T object);
+    protected abstract Observable<T> update(T item);
 
     /**
      *
@@ -328,7 +328,7 @@ public abstract class AbstractService<T> implements IService<T> {
      *
      * @param object
      */
-    protected abstract Observable<Void> delete(T object);
+    protected abstract Observable<Void> delete(T item);
 
     /**
      * Delete all stored instances

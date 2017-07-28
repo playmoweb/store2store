@@ -1,7 +1,6 @@
 package com.playmoweb.store2store.utils;
 
-import io.reactivex.disposables.Disposable;
-import io.reactivex.Observer;
+import io.reactivex.observers.DisposableObserver;
 
 /**
  * Class used internally to dispatch an updated state
@@ -13,18 +12,11 @@ import io.reactivex.Observer;
  * @updated hoanghiep
  * @date    28/07/2017
  */
-public class SimpleObserver<T> implements Observer<T> {
+public class SimpleObserver<T> extends DisposableObserver<T> {
     private final CustomObserver<T> observer;
 
     public SimpleObserver(CustomObserver<T> observer) {
         this.observer = observer;
-    }
-
-    @Override
-    public void onSubscribe(Disposable d) {
-        if (observer != null) {
-            observer.getCompositeDisposable().add(d);
-        }
     }
 
     @Override
