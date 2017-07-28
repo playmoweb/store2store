@@ -1,6 +1,7 @@
 package com.playmoweb.store2store.service;
 
 import android.support.test.runner.AndroidJUnit4;
+import android.util.Log;
 
 import com.playmoweb.store2store.mock.MemoryService;
 import com.playmoweb.store2store.mock.TestModel;
@@ -36,37 +37,31 @@ public class AbstractServiceGetUnitTest {
 
     @Test
     public void testMe(){
+        Log.e("testMe", "BEGIN");
         service.getAll(test)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io())
-                .subscribeWith(new CustomObserver<List<TestModel>>() {
-                    @Override
-                    public CompositeDisposable getCompositeDisposable() {
-                        return null;
-                    }
+                .subscribeWith(test);
 
-                    @Override
-                    public void onError(Throwable e, boolean isUpdated) {
-
-                    }
-
-                    @Override
-                    public void onNext(List<TestModel> testModels, boolean isUpdated) {
-
-                    }
-                });
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
-    CustomObserver<List<TestModel>> test = new CustomObserver<List<TestModel>>(disposables) {
+    CustomObserver<List<TestModel>> test = new CustomObserver<List<TestModel>>() {
         @Override
         public void onError(Throwable e, boolean isUpdated) {
-
+            Log.e("onError", "Is updated => " + isUpdated);
+            Log.e("onError", e.toString());
+            e.printStackTrace();
         }
 
         @Override
         public void onNext(List<TestModel> testModels, boolean isUpdated) {
-
+            Log.e("onNext", "Is updated => " + isUpdated);
         }
     };
 

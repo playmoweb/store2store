@@ -2,9 +2,11 @@ package com.playmoweb.store2store.service;
 
 import com.playmoweb.store2store.utils.CustomObserver;
 import com.playmoweb.store2store.utils.Filter;
+import com.playmoweb.store2store.utils.NullObject;
 import com.playmoweb.store2store.utils.SortingMode;
 
 import java.util.List;
+
 import io.reactivex.Observable;
 
 /**
@@ -78,18 +80,18 @@ public interface IService<T> {
      * @param object
      * @param otherSubscriber
      */
-    Observable<Void> delete(final T object, final CustomObserver<Void> otherSubscriber);
+    Observable<NullObject> delete(final T object, final CustomObserver<NullObject> otherSubscriber);
 
     /**
      * Delete all objects
      * @param objects
      * @param otherSubscriber
      */
-    Observable<Void> delete(final List<T> objects, final CustomObserver<Void> otherSubscriber);
+    Observable<NullObject> delete(final List<T> objects, final CustomObserver<NullObject> otherSubscriber);
 
     /**
      * Delete all objects of this type
      * @param otherSubscriber
      */
-    Observable<Void> deleteAll(final CustomObserver<Void> otherSubscriber);
+    Observable<NullObject> deleteAll(final CustomObserver<NullObject> otherSubscriber);
 }

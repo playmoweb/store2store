@@ -2,6 +2,7 @@ package com.playmoweb.store2store.mock;
 
 import com.playmoweb.store2store.service.AbstractService;
 import com.playmoweb.store2store.utils.Filter;
+import com.playmoweb.store2store.utils.NullObject;
 import com.playmoweb.store2store.utils.SortingMode;
 
 import java.util.List;
@@ -63,17 +64,17 @@ public class MemoryService extends AbstractService<TestModel> {
     }
 
     @Override
-    protected Observable<Void> delete(List<TestModel> items) {
+    protected Observable<NullObject> delete(List<TestModel> items) {
         return myCustomAPI.delete(items);
     }
 
     @Override
-    protected Observable<Void> delete(TestModel object) {
+    protected Observable<NullObject> delete(TestModel object) {
         return myCustomAPI.delete(object);
     }
 
     @Override
-    protected Observable<Void> deleteAll() {
+    protected Observable<NullObject> deleteAll() {
         return myCustomAPI.deleteAll();
     }
 }
