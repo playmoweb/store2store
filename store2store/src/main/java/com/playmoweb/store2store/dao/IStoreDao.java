@@ -4,8 +4,7 @@ import com.playmoweb.store2store.utils.Filter;
 import com.playmoweb.store2store.utils.SortingMode;
 
 import java.util.List;
-
-import rx.Observable;
+import io.reactivex.Observable;
 
 /**
  * DAO interface

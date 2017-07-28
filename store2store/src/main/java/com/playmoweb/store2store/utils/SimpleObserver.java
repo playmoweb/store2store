@@ -1,39 +1,50 @@
 package com.playmoweb.store2store.utils;
 
-import rx.Observer;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.Observer;
 
 /**
  * Class used internally to dispatch an updated state
  * @param <T>
  * @author  Thibaud Giovannetti
  * @by      Playmoweb
- * @date    08/02/2017.
+ * @date    08/02/2017
+ *
+ * @updated hoanghiep
+ * @date    28/07/2017
  */
 public class SimpleObserver<T> implements Observer<T> {
-    private final CustomObserver<T> otherObserver;
+    private final CustomObserver<T> observer;
 
-    public SimpleObserver(CustomObserver<T> otherObserver) {
-        this.otherObserver = otherObserver;
+    public SimpleObserver(CustomObserver<T> observer) {
+        this.observer = observer;
     }
 
     @Override
-    public void onCompleted() {
-        if(otherObserver != null) {
-            otherObserver.onCompleted(true);
+    public void onSubscribe(Disposable d) {
+        if (observer != null) {
+            observer.getCompositeDisposable().add(d);
+        }
+    }
+
+    @Override
+    public void onNext(T value) {
+        if (observer != null) {
+            observer.onNext(value, true);
         }
     }
 
     @Override
     public void onError(Throwable e) {
-        if(otherObserver != null) {
-            otherObserver.onError(e, true);
+        if (observer != null) {
+            observer.onError(e, true);
         }
     }
 
     @Override
-    public void onNext(T t) {
-        if(otherObserver != null) {
-            otherObserver.onNext(t, true);
+    public void onComplete() {
+        if (observer != null) {
+            observer.onComplete(true);
         }
     }
 }

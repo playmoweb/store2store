@@ -1,6 +1,7 @@
 ## About
 
-Store2Store simplify the synchronization between storages. For instance, you can easily synchronize a REST API with a local Realm datastore.
+Store2Store simplify the synchronization between storages. 
+For instance, you can easily synchronize a REST API with a local Realm datastore.
 
 ## Installation with gradle
 
@@ -30,8 +31,10 @@ public class MyStoreService<T> extends AbstractService<T> {
 }
 ```
 
-Have a look to existing implementations  : 
+### Existing implementations
 
 - Realm : https://github.com/playmoweb/store2realm
 
 
+## Contributors
+Please see [CONTRIBUTORS.md](https://github.com/playmoweb/store2store/CONTRIBUTORS.md)
