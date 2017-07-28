@@ -37,4 +37,4 @@ public class MyStoreService<T> extends AbstractService<T> {
 
 
 ## Contributors
-Please see [CONTRIBUTORS.md](https://github.com/playmoweb/store2store/CONTRIBUTORS.md)
+Please see [CONTRIBUTORS.md](https://github.com/playmoweb/store2store/blob/master/CONTRIBUTORS.md)
