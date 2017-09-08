@@ -43,4 +43,12 @@ public class TestModel {
     public void setAvailable(boolean available) {
         this.available = available;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj instanceof TestModel){
+            return id == ((TestModel) obj).getId();
+        }
+        return super.equals(obj);
+    }
 }
