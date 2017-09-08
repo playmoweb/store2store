@@ -5,7 +5,6 @@ import com.playmoweb.store2store.utils.SortingMode;
 
 import java.util.List;
 
-import io.reactivex.Completable;
 import io.reactivex.Observable;
 
 /**
@@ -14,72 +13,61 @@ import io.reactivex.Observable;
  * @date    07/09/2017
  */
 public abstract class StoreDao<T> {
-    /**
-     * Get all
-     * @param filter
-     * @param sortingMode
-     * @return
-     */
+
     public Observable<List<T>> getAll(final Filter filter, final SortingMode sortingMode) {
         throw new UnsupportedOperationException("This method has not been implemented in the child class");
     }
 
-    /**
-     * Get One
-     * @param filter
-     * @return
-     */
     public Observable<T> getOne(final Filter filter, final SortingMode sortingMode) {
         throw new UnsupportedOperationException("This method has not been implemented in the child class");
     }
 
-    /**
-     * Get By Id
-     * @param id
-     * @return
-     */
     public Observable<T> getById(final int id) {
         throw new UnsupportedOperationException("This method has not been implemented in the child class");
     }
 
-    /**
-     * Insert or Update
-     * @param object
-     * @return
-     */
-    public Observable<T> insertOrUpdate(final T object) {
+    public Observable<T> insert(final T item) {
         throw new UnsupportedOperationException("This method has not been implemented in the child class");
     }
 
-    /**
-     * Insert Or Update
-     * @param items
-     * @return
-     */
+    public Observable<List<T>> insert(final List<T> items) {
+        throw new UnsupportedOperationException("This method has not been implemented in the child class");
+    }
+
+    public Observable<T> update(final T item) {
+        throw new UnsupportedOperationException("This method has not been implemented in the child class");
+    }
+
+    public Observable<List<T>> update(final List<T> items) {
+        throw new UnsupportedOperationException("This method has not been implemented in the child class");
+    }
+
+    public Observable<T> insertOrUpdate(final T item) {
+        throw new UnsupportedOperationException("This method has not been implemented in the child class");
+    }
+
     public Observable<List<T>> insertOrUpdate(final List<T> items) {
         throw new UnsupportedOperationException("This method has not been implemented in the child class");
     }
 
     /**
-     * Delete a List
-     * @param items
+     * @return  int  Number of items deleted
      */
-    public Completable delete(final List<T> items) {
+    public Observable<Integer> delete(final List<T> items) {
         throw new UnsupportedOperationException("This method has not been implemented in the child class");
     }
 
     /**
-     * Delete One
-     * @param object
+     * @return  int  Number of items deleted
      */
-    public Completable delete(final T object) {
+    public Observable<Integer> delete(final T item) {
         throw new UnsupportedOperationException("This method has not been implemented in the child class");
     }
 
     /**
-     * Delete all stored instances
+     * @return  int  Number of items deleted
      */
-    public Completable deleteAll() {
+    public Observable<Integer> deleteAll() {
         throw new UnsupportedOperationException("This method has not been implemented in the child class");
     }
 }
