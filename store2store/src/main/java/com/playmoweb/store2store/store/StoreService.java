@@ -6,13 +6,10 @@ import com.playmoweb.store2store.utils.SortingMode;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.reactivex.Completable;
 import io.reactivex.Observable;
-import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableSource;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.functions.Function;
-import io.reactivex.observers.DisposableObserver;
 
 /**
  * Abstract StoreService
@@ -28,9 +25,9 @@ public abstract class StoreService<T> extends StoreDao<T> {
     private final Class<T> clazz;
 
     /**
-     * Default storage used
+     * Default dao used
      */
-    private final StoreDao<T> storage;
+    private final StoreDao<T> dao;
 
     /**
      * List of store synced with this one
@@ -45,9 +42,9 @@ public abstract class StoreService<T> extends StoreDao<T> {
     /**
      * Create a typed Store
      */
-    public StoreService(Class<T> clazz, StoreDao<T> storage) {
+    public StoreService(Class<T> clazz, StoreDao<T> dao) {
         this.clazz = clazz;
-        this.storage = storage;
+        this.dao = dao;
     }
 
     /**
@@ -59,11 +56,11 @@ public abstract class StoreService<T> extends StoreDao<T> {
     }
 
     /**
-     * Get the storage used by this Store
+     * Get the dao used by this Store
      * @return
      */
-    public StoreDao<T> getStorage() {
-        return storage;
+    public StoreDao<T> getDao() {
+        return dao;
     }
 
     /**
@@ -84,33 +81,39 @@ public abstract class StoreService<T> extends StoreDao<T> {
     @Override
     public final Observable<List<T>> getAll(final Filter filter, final SortingMode sortingMode) {
         List<Observable<List<T>>> observables = new ArrayList<>();
-        Observable<List<T>> obsStorage = storage.getAll(filter, sortingMode);
+        Observable<List<T>> obsStorage = dao.getAll(filter, sortingMode);
 
         if(hasSyncedStore()) {
             // sync response with syncedStore
             obsStorage = obsStorage
-                .flatMap(new Function<List<T>, ObservableSource<List<T>>>() {
-                    @Override
-                    public ObservableSource<List<T>> apply(final List<T> items) throws Exception {
-                        List<T> copy = new ArrayList<>(items);
-                        if(filter == null) {
-                            return syncedStore.deleteAll().andThen(Observable.just(copy)); // full replacement, we clean up the Store storage
-                        }
-                        return Observable.just(copy);
-                    }
-                })
-                .flatMap(new Function<List<T>, ObservableSource<List<T>>>() {
-                    @Override
-                    public ObservableSource<List<T>> apply(List<T> items) throws Exception {
-                        return syncedStore.insertOrUpdate(items)
-                                .flatMap(new Function<List<T>, ObservableSource<List<T>>>() {
+                    .flatMap(new Function<List<T>, ObservableSource<List<T>>>() {
+                        @Override
+                        public ObservableSource<List<T>> apply(final List<T> items) throws Exception {
+                            final List<T> copy = new ArrayList<>(items);
+                            if(filter == null) {
+                                // full replacement, we clean up the Store dao
+                                return syncedStore.deleteAll().map(new Function<Integer, List<T>>() {
                                     @Override
-                                    public ObservableSource<List<T>> apply(List<T> ts) throws Exception {
-                                        return syncedStore.getAll(filter, sortingMode);
+                                    public List<T> apply(Integer integer) throws Exception {
+                                        return copy;
                                     }
                                 });
-                    }
-                });
+                            }
+                            return Observable.just(copy);
+                        }
+                    })
+                    .flatMap(new Function<List<T>, ObservableSource<List<T>>>() {
+                        @Override
+                        public ObservableSource<List<T>> apply(List<T> items) throws Exception {
+                            return syncedStore.insertOrUpdate(items)
+                                    .flatMap(new Function<List<T>, ObservableSource<List<T>>>() {
+                                        @Override
+                                        public ObservableSource<List<T>> apply(List<T> ts) throws Exception {
+                                            return syncedStore.getAll(filter, sortingMode);
+                                        }
+                                    });
+                        }
+                    });
 
             observables.add(syncedStore.getAll(filter, sortingMode)); // add synced store call, first in list
         }
@@ -119,22 +122,192 @@ public abstract class StoreService<T> extends StoreDao<T> {
         return Observable.concat(observables);
     }
 
+    public final Observable<List<T>> getAll(final Filter filter) {
+        return getAll(filter, SortingMode.DEFAULT);
+    }
+
+    public final Observable<List<T>> getAll() {
+        return getAll(null);
+    }
+
+    @Override
+    public Observable<List<T>> insert(final List<T> items) {
+        List<Observable<List<T>>> observables = new ArrayList<>();
+        Observable<List<T>> obsStorage = dao.insert(items);
+
+        if(hasSyncedStore()) {
+            obsStorage = obsStorage
+                    .onErrorResumeNext(new Function<Throwable, ObservableSource<List<T>>>() {
+                        @Override
+                        public ObservableSource<List<T>> apply(final Throwable throwable) throws Exception {
+                            return syncedStore.delete(items).flatMap(new Function<Object, ObservableSource<List<T>>>() {
+                                @Override
+                                public ObservableSource<List<T>> apply(Object o) throws Exception {
+                                    return Observable.error(throwable);
+                                }
+                            });
+                        }
+                    })
+                    .flatMap(new Function<List<T>, ObservableSource<List<T>>>() {
+                        @Override
+                        public ObservableSource<List<T>> apply(List<T> it) throws Exception {
+                            return syncedStore.insertOrUpdate(it);
+                        }
+                    });
+
+            observables.add(syncedStore.insert(items));
+        }
+
+        observables.add(obsStorage);
+        return Observable.concat(observables);
+    }
+
+    @Override
+    public Observable<T> insert(final T item) {
+        List<Observable<T>> observables = new ArrayList<>();
+        Observable<T> obsStorage = dao.insert(item);
+
+        if(hasSyncedStore()) {
+            obsStorage = obsStorage
+                    .onErrorResumeNext(new Function<Throwable, ObservableSource<T>>() {
+                        @Override
+                        public ObservableSource<T> apply(final Throwable throwable) throws Exception {
+                            return syncedStore.delete(item).flatMap(new Function<Object, ObservableSource<T>>() {
+                                @Override
+                                public ObservableSource<T> apply(Object o) throws Exception {
+                                    return Observable.error(throwable);
+                                }
+                            });
+                        }
+                    })
+                    .flatMap(new Function<T, ObservableSource<T>>() {
+                        @Override
+                        public ObservableSource<T> apply(T it) throws Exception {
+                            return syncedStore.insertOrUpdate(it);
+                        }
+                    });
+
+            observables.add(syncedStore.insert(item));
+        }
+
+        observables.add(obsStorage);
+        return Observable.concat(observables);
+    }
+
     @Override
     public Observable<List<T>> insertOrUpdate(List<T> items) {
-        return storage.insertOrUpdate(items);
+        return dao.insertOrUpdate(items);
     }
 
     @Override
-    public Completable deleteAll() {
-        return storage.deleteAll();
+    public Observable<T> insertOrUpdate(T item) {
+        return dao.insertOrUpdate(item);
     }
 
+    @Override
+    public Observable<Integer> deleteAll() {
+        List<Observable<Integer>> observables = new ArrayList<>();
+        Observable<Integer> obsStorage = dao.deleteAll();
+
+        // TODO improve the deleteAll method in case of double fail
+        // copy the syncedStore for insert if double fail
+        // execute the deleteAll (this)
+        // if error, try getAll()
+        // if error again => re-insert syncedStore datas (better than nothing)
+        // if not error, insert fresh datas
+        //
+
+        if(hasSyncedStore()) {
+            obsStorage = obsStorage
+                    .onErrorResumeNext(new Function<Throwable, ObservableSource<Integer>>() {
+                        @Override
+                        public ObservableSource<Integer> apply(final Throwable throwable) throws Exception {
+                            return getAll()
+                                    .flatMap(new Function<List<T>, ObservableSource<List<T>>>() {
+                                        @Override
+                                        public ObservableSource<List<T>> apply(final List<T> items) throws Exception {
+                                            return syncedStore.insertOrUpdate(items);
+                                        }
+                                    })
+                                    .flatMap(new Function<List<T>, ObservableSource<Integer>>() {
+                                        @Override
+                                        public ObservableSource<Integer> apply(List<T> reinsertedItems) throws Exception {
+                                            return Observable.error(throwable);
+                                        }
+                                    });
+                        }
+                    });
+
+            observables.add(syncedStore.deleteAll());
+        }
+
+        observables.add(obsStorage);
+        return Observable.concat(observables);
+    }
+
+    @Override
+    public Observable<Integer> delete(final List<T> items) {
+        List<Observable<Integer>> observables = new ArrayList<>();
+        Observable<Integer> obsStorage = dao.delete(items);
+
+        if(hasSyncedStore()) {
+            obsStorage = obsStorage
+                    .onErrorResumeNext(new Function<Throwable, ObservableSource<Integer>>() {
+                        @Override
+                        public ObservableSource<Integer> apply(final Throwable throwable) throws Exception {
+                            return syncedStore.insertOrUpdate(items)
+                                    .flatMap(new Function<List<T>, ObservableSource<Integer>>() {
+                                        @Override
+                                        public ObservableSource<Integer> apply(List<T> reinsertedItem) throws Exception {
+                                            return Observable.error(throwable);
+                                        }
+                                    });
+                        }
+                    });
+
+            observables.add(syncedStore.delete(items));
+        }
+
+        observables.add(obsStorage);
+        return Observable.concat(observables);
+    }
+
+    @Override
+    public Observable<Integer> delete(final T item) {
+        List<Observable<Integer>> observables = new ArrayList<>();
+        Observable<Integer> obsStorage = dao.delete(item);
+
+        if(hasSyncedStore()) {
+            obsStorage = obsStorage
+                    .onErrorResumeNext(new Function<Throwable, ObservableSource<Integer>>() {
+                        @Override
+                        public ObservableSource<Integer> apply(final Throwable throwable) throws Exception {
+                            return syncedStore.insertOrUpdate(item)
+                                    .flatMap(new Function<T, ObservableSource<Integer>>() {
+                                        @Override
+                                        public ObservableSource<Integer> apply(T reinsertedItem) throws Exception {
+                                            // we could emit a new Integer(0) before the error but it breaks the concept of rollbackIfErrorWithoutOnNext
+                                            return Observable.error(throwable);
+                                        }
+                                    });
+                        }
+                    });
+
+            observables.add(syncedStore.delete(item));
+        }
+
+        observables.add(obsStorage);
+        return Observable.concat(observables);
+    }
+
+/*
     /**
      * Wrap an emitter into another Observer
      * @param emitter
      * @param <S>
      * @return
      */
+/*
     private <S> DisposableObserver<S> wrapEmitterInNewObserver(final ObservableEmitter<S> emitter, final boolean shouldCompleteEmitter){
         return new DisposableObserver<S>() {
             @Override
@@ -159,4 +332,5 @@ public abstract class StoreService<T> extends StoreDao<T> {
             }
         };
     }
+*/
 }

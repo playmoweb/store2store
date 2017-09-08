@@ -9,7 +9,6 @@ import com.playmoweb.store2store.utils.SortingMode;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.reactivex.Completable;
 import io.reactivex.Observable;
 
 /**
@@ -63,37 +62,74 @@ public class MemoryDao extends StoreDao<TestModel> {
     }
 
     @Override
-    public Completable delete(List<TestModel> items) {
-        for(TestModel tm : models) {
-            removeItemIfExists(tm);
-        }
-        return Completable.complete();
-    }
-
-    @Override
-    public Completable delete(TestModel object) {
-        removeItemIfExists(object);
-        return Completable.complete();
-    }
-
-    @Override
-    public Completable deleteAll() {
-        models.clear();
-        return Completable.complete();
-    }
-
-
-    // PRIVATES METHODS
-
-    private List<TestModel> removeItemIfExists(TestModel object) {
+    public Observable<Integer> delete(List<TestModel> items) {
         List<TestModel> output = new ArrayList<>();
-        for(TestModel tm : models) {
-            if(tm.getId() != object.getId()) {
+
+        int found = 0;
+        for (TestModel tm : models) {
+            boolean foundInDeleteList = false;
+            for(TestModel model : items) {
+                if(tm.getId() != model.getId()) {
+                    foundInDeleteList = true;
+                    found++;
+                    break;
+                }
+            }
+
+            if(!foundInDeleteList){
                 output.add(tm);
             }
         }
-        return output;
+
+        models.clear();
+        models.addAll(output);
+        return Observable.just(found);
     }
+
+    @Override
+    public Observable<Integer> delete(TestModel object) {
+        List<TestModel> output = new ArrayList<>();
+        int found = 0;
+        for(TestModel tm : models) {
+            if(tm.getId() != object.getId()) {
+                output.add(tm);
+            } else {
+                found = 1;
+            }
+        }
+        models.clear();
+        models.addAll(output);
+        return Observable.just(found);
+    }
+
+    @Override
+    public Observable<Integer> deleteAll() {
+        final int deleted = models.size();
+        models.clear();
+        return Observable.just(deleted);
+    }
+
+    @Override
+    public Observable<TestModel> insert(TestModel item) {
+        return insertOrUpdate(item);
+    }
+
+    @Override
+    public Observable<List<TestModel>> insert(List<TestModel> items) {
+        return insertOrUpdate(items);
+    }
+
+    @Override
+    public Observable<TestModel> update(TestModel item) {
+        return insertOrUpdate(item);
+    }
+
+    @Override
+    public Observable<List<TestModel>> update(List<TestModel> items) {
+        return insertOrUpdate(items);
+    }
+
+    // PRIVATES METHODS
 
     private TestModel insertObjectOrUpdate(TestModel object) {
         TestModel t = null;
