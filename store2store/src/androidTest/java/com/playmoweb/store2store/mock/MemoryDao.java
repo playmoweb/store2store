@@ -1,13 +1,15 @@
 package com.playmoweb.store2store.mock;
 
-import com.playmoweb.store2store.dao.IStoreDao;
+import android.util.Log;
+
+import com.playmoweb.store2store.store.StoreDao;
 import com.playmoweb.store2store.utils.Filter;
-import com.playmoweb.store2store.utils.NullObject;
 import com.playmoweb.store2store.utils.SortingMode;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import io.reactivex.Completable;
 import io.reactivex.Observable;
 
 /**
@@ -19,12 +21,13 @@ import io.reactivex.Observable;
  * @by      Playmoweb
  * @date    28/02/2017
  */
-public class MemoryStoreDao implements IStoreDao<TestModel> {
-    private List<TestModel> models = new ArrayList<>();
+public class MemoryDao extends StoreDao<TestModel> {
+    public final static List<TestModel> models = new ArrayList<>(); // shared datastorage
 
     @Override
     public Observable<List<TestModel>> getAll(Filter filter, SortingMode sortingMode) {
-        return Observable.just(models);
+        List<TestModel> copy = new ArrayList<>(models);
+        return Observable.just(copy);
     }
 
     @Override
@@ -50,33 +53,33 @@ public class MemoryStoreDao implements IStoreDao<TestModel> {
     }
 
     @Override
-    public Observable<List<TestModel>> insertOrUpdate(List<TestModel> items) {
-        List<TestModel> output = new ArrayList<>(items.size());
-
+    public Observable<List<TestModel>> insertOrUpdate(final List<TestModel> items) {
+        Log.e("INSERT", "SIZE = "+items.size());
         for(int i = 0; i < items.size(); i++) {
-            output.set(i, insertObjectOrUpdate(items.get(i)));
+            Log.e("INSERT", ""+items.get(i).getId());
+            insertObjectOrUpdate(items.get(i));
         }
-        return Observable.just(output);
+        return Observable.just(items);
     }
 
     @Override
-    public Observable<NullObject> delete(List<TestModel> items) {
+    public Completable delete(List<TestModel> items) {
         for(TestModel tm : models) {
             removeItemIfExists(tm);
         }
-        return Observable.just(new NullObject());
+        return Completable.complete();
     }
 
     @Override
-    public Observable<NullObject> delete(TestModel object) {
+    public Completable delete(TestModel object) {
         removeItemIfExists(object);
-        return Observable.just(new NullObject());
+        return Completable.complete();
     }
 
     @Override
-    public Observable<NullObject> deleteAll() {
+    public Completable deleteAll() {
         models.clear();
-        return Observable.just(new NullObject());
+        return Completable.complete();
     }
 
 
