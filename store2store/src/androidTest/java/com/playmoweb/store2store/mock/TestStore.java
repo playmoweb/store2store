@@ -52,6 +52,11 @@ public class TestStore extends StoreService<TestModel> {
         }
 
         @Override
+        public Flowable<Optional<TestModel>> getOne(TestModel item) {
+            return getOne(new Filter("id", item.getId()), null);
+        }
+
+        @Override
         public Flowable<Optional<TestModel>> getOne(Filter filter, SortingMode sortingMode) {
             if(shouldThrowError){
                 return Flowable.error(new Exception("getOne.error"));
@@ -92,7 +97,7 @@ public class TestStore extends StoreService<TestModel> {
         @Override
         public Flowable<Integer> delete(List<TestModel> items) {
             if(shouldThrowError){
-                return Flowable.error(new Exception("deleteSingle.error"));
+                return Flowable.error(new Exception("delete.error"));
             }
             return Flowable.just(items.size()).delay(1, TimeUnit.SECONDS);
         }

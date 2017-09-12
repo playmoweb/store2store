@@ -113,6 +113,33 @@ public class StoreServiceUnitTest {
     }
 
     @Test
+    public void testGetOneObject(){
+        MemoryDao.models.clear();
+
+        List<TestModel> list = new ArrayList<>();
+        list.add(new TestModel(10));
+        list.add(new TestModel(20));
+        list.add(new TestModel(30));
+        memoryStore.insertOrUpdate(list);
+
+        TestModel toFind = new TestModel(20);
+
+        TestSubscriber<Optional<TestModel>> observer = new TestSubscriber<>();
+        disposables.add(testStore.getOne(toFind)
+                .subscribeOn(Schedulers.io())
+                .subscribeWith(observer));
+
+        observer.awaitTerminalEvent(5, SECONDS);
+        observer.assertComplete();
+        observer.assertNoErrors();
+
+        Assert.assertEquals(3, MemoryDao.models.size());
+
+        TestModel tm = observer.values().get(0).get();
+        Assert.assertEquals(20, tm.getId());
+    }
+
+    @Test
     public void testGetAll(){
         MemoryDao.models.clear();
         List<TestModel> list = new ArrayList<>();
@@ -360,32 +387,6 @@ public class StoreServiceUnitTest {
 
         TestSubscriber<Integer> observer = new TestSubscriber<>();
         disposables.add(testStore.deleteAll()
-                .subscribeOn(Schedulers.io())
-                .subscribeWith(observer));
-
-        observer.awaitTerminalEvent(5, SECONDS);
-        observer.assertError(Throwable.class);
-        observer.assertErrorMessage("deleteAll.error");
-
-        testStore.shouldThrowError(false); // disable error
-        Assert.assertEquals(3, MemoryDao.models.size());
-    }
-
-    @Test
-    public void testGetOne(){
-        testStore.shouldThrowError(true);
-        MemoryDao.models.clear();
-
-        List<TestModel> list = new ArrayList<>();
-        list.add(new TestModel(10));
-        list.add(new TestModel(20));
-        list.add(new TestModel(30));
-        memoryStore.insertOrUpdate(list);
-
-        TestModel toFind = new TestModel(10);
-
-        TestSubscriber<Optional<TestModel>> observer = new TestSubscriber<>();
-        disposables.add(testStore.getOne(toFind, toFind)
                 .subscribeOn(Schedulers.io())
                 .subscribeWith(observer));
 
