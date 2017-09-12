@@ -18,7 +18,9 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.reactivex.Flowable;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subscribers.TestSubscriber;
 
@@ -396,6 +398,61 @@ public class StoreServiceUnitTest {
 
         testStore.shouldThrowError(false); // disable error
         Assert.assertEquals(3, MemoryDao.models.size());
+    }
+
+    @Test
+    public void testInsertOrUpdate(){
+
+        MemoryDao.models.clear();
+
+        final TestModel model = new TestModel(99);
+        model.setAvailable(true);
+
+        TestSubscriber<Optional<TestModel>> observer = new TestSubscriber<>();
+        disposables.add(testStore.insertOrUpdate(model)
+                .flatMap(new Function<Optional<TestModel>, Flowable<Optional<TestModel>>>() {
+                    @Override
+                    public Flowable<Optional<TestModel>> apply(Optional<TestModel> testModelOptional) throws Exception {
+                        Assert.assertTrue(testModelOptional.get().isAvailable());
+                        model.setAvailable(false);
+                        return testStore.insertOrUpdate(model);
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+                .subscribeWith(observer));
+
+
+        observer.awaitTerminalEvent(4, SECONDS);
+        observer.assertComplete();
+        observer.assertNoErrors();
+
+        final TestModel output = observer.values().get(0).get();
+
+        Assert.assertNull(output);
+        Assert.assertEquals(0, MemoryDao.models.size());
+    }
+
+    @Test
+    public void testInsertOrUpdateWithError(){
+        MemoryDao.models.clear();
+        testStore.shouldThrowError(true);
+
+        final TestModel model = new TestModel(99);
+        model.setAvailable(true);
+
+        TestSubscriber<Optional<TestModel>> observer = new TestSubscriber<>();
+        disposables.add(testStore.insertOrUpdate(model)
+                .subscribeOn(Schedulers.io())
+                .subscribeWith(observer));
+
+        observer.awaitTerminalEvent(3, SECONDS);
+        observer.assertError(Throwable.class);
+        observer.assertErrorMessage("insertOrUpdateSingle.error");
+
+        testStore.shouldThrowError(false);
+        
+        Assert.assertEquals(0, observer.values().size());
+        Assert.assertEquals(0, MemoryDao.models.size());
     }
 
     @After

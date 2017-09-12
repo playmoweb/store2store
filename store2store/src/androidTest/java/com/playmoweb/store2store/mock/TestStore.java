@@ -118,5 +118,13 @@ public class TestStore extends StoreService<TestModel> {
                         }
                     });
         }
+
+        @Override
+        public Flowable<Optional<TestModel>> insertOrUpdate(TestModel item) {
+            if(shouldThrowError){
+                return Flowable.error(new Exception("insertOrUpdateSingle.error"));
+            }
+            return Flowable.just(Optional.wrap(item)).delay(1, TimeUnit.SECONDS);
+        }
     }
 }
