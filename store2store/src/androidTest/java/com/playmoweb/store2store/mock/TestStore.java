@@ -52,6 +52,24 @@ public class TestStore extends StoreService<TestModel> {
         }
 
         @Override
+        public Flowable<Optional<List<TestModel>>> getAll(final List<TestModel> items) {
+            return getAll(null, null).map(new Function<Optional<List<TestModel>>, Optional<List<TestModel>>>() {
+                @Override
+                public Optional<List<TestModel>> apply(Optional<List<TestModel>> fullList) throws Exception {
+                    List<TestModel> output = new ArrayList<>();
+                    for(TestModel toFind : items){
+                        for(TestModel tm : fullList.get()){
+                            if(tm.getId() == toFind.getId()){
+                                output.add(tm);
+                            }
+                        }
+                    }
+                    return Optional.wrap(output);
+                }
+            });
+        }
+
+        @Override
         public Flowable<Optional<TestModel>> getOne(TestModel item) {
             return getOne(new Filter("id", item.getId()), null);
         }
@@ -125,6 +143,14 @@ public class TestStore extends StoreService<TestModel> {
                 return Flowable.error(new Exception("insertOrUpdateSingle.error"));
             }
             return Flowable.just(Optional.wrap(item)).delay(1, TimeUnit.SECONDS);
+        }
+
+        @Override
+        public Flowable<Optional<List<TestModel>>> insertOrUpdate(final List<TestModel> items) {
+            if(shouldThrowError){
+                return Flowable.error(new Exception("insertOrUpdate.error"));
+            }
+            return Flowable.just(Optional.wrap(items)).delay(1, TimeUnit.SECONDS);
         }
     }
 }
