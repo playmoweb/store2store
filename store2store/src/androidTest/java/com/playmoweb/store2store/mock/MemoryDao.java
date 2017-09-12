@@ -40,6 +40,11 @@ public class MemoryDao extends StoreDao<TestModel> {
     }
 
     @Override
+    public Flowable<Optional<TestModel>> getOne(TestModel item) {
+        return getById(item.getId());
+    }
+
+    @Override
     public Flowable<Optional<TestModel>> getById(int id) {
         TestModel t = null;
         for(TestModel tm : models) {
