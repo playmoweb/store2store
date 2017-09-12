@@ -433,7 +433,7 @@ public class StoreServiceUnitTest {
     }
 
     @Test
-    public void testInsertOrUpdateWithError(){
+    public void testInsertOrUpdateForInsertWithError(){
         MemoryDao.models.clear();
         testStore.shouldThrowError(true);
 
@@ -450,9 +450,38 @@ public class StoreServiceUnitTest {
         observer.assertErrorMessage("insertOrUpdateSingle.error");
 
         testStore.shouldThrowError(false);
-        
+
         Assert.assertEquals(0, observer.values().size());
         Assert.assertEquals(0, MemoryDao.models.size());
+    }
+
+    @Test
+    public void testInsertOrUpdateForUpdateWithError(){
+        MemoryDao.models.clear();
+        final TestModel model = new TestModel(99);
+        model.setAvailable(true); // should be rollback to this version
+        MemoryDao.models.add(model);
+
+        testStore.shouldThrowError(true);
+
+        final TestModel otherModelReferenceWithSameId = new TestModel(99);
+        otherModelReferenceWithSameId.setAvailable(false);
+
+        TestSubscriber<Optional<TestModel>> observer = new TestSubscriber<>();
+        disposables.add(testStore.insertOrUpdate(otherModelReferenceWithSameId)
+                .subscribeOn(Schedulers.io())
+                .subscribeWith(observer));
+
+        observer.awaitTerminalEvent(5, SECONDS);
+        observer.assertError(Throwable.class);
+        observer.assertErrorMessage("insertOrUpdateSingle.error");
+
+        testStore.shouldThrowError(false);
+
+        final TestModel output = MemoryDao.models.get(0);
+        Assert.assertEquals(1, MemoryDao.models.size());
+        Assert.assertNotNull(output);
+        Assert.assertTrue(output.isAvailable()); // rollback to first version
     }
 
     @After
