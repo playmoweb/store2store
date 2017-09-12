@@ -114,6 +114,27 @@ public abstract class StoreService<T> extends StoreDao<T> {
         return Flowable.concat(flowables);
     }
 
+    @Override
+    public Flowable<Optional<List<T>>> getAll(final List<T> items) {
+        List<Flowable<Optional<List<T>>>> flowables = new ArrayList<>();
+        Flowable<Optional<List<T>>> flowStorage = dao.getAll(items);
+
+        if(hasSyncedStore()) {
+            flowStorage = flowStorage
+                    .flatMap(new Function<Optional<List<T>>, Flowable<Optional<List<T>>>>() {
+                        @Override
+                        public Flowable<Optional<List<T>>> apply(Optional<List<T>> items) throws Exception {
+                            return syncedStore.insertOrUpdate(items.get());
+                        }
+                    });
+
+            flowables.add(syncedStore.getAll(items));
+        }
+
+        flowables.add(flowStorage);
+        return Flowable.concat(flowables);
+    }
+
     public final Flowable<Optional<List<T>>> getAll(final Filter filter) {
         return getAll(filter, SortingMode.DEFAULT);
     }
@@ -263,7 +284,57 @@ public abstract class StoreService<T> extends StoreDao<T> {
 
     @Override
     public Flowable<Optional<List<T>>> insertOrUpdate(final List<T> items) {
-        return dao.insertOrUpdate(items);
+        Flowable<Optional<List<T>>> flowStorage;
+
+        if(hasSyncedStore()) {
+            flowStorage = syncedStore.getAll(items) // try to get a copy before trying to update/insert
+                    .flatMap(new Function<Optional<List<T>>, Flowable<Optional<List<T>>>>() {
+                        @Override
+                        public Flowable<Optional<List<T>>> apply(final Optional<List<T>> originalItems) {
+                            return Flowable.concat(
+                                syncedStore.insertOrUpdate(items),
+                                dao.insertOrUpdate(items)
+                                        .onErrorResumeNext(new Function<Throwable, Flowable<Optional<List<T>>>>() {
+                                            @Override
+                                            public Flowable<Optional<List<T>>> apply(final Throwable throwable) {
+                                                if(originalItems.isNull() || originalItems.get().size() == 0){
+                                                    return syncedStore.delete(items).flatMap(new Function<Integer, Flowable<Optional<List<T>>>>() {
+                                                        @Override
+                                                        public Flowable<Optional<List<T>>> apply(Integer notUsed) {
+                                                            return Flowable.error(throwable);
+                                                        }
+                                                    });
+                                                } else {
+                                                    return syncedStore.delete(items)
+                                                        .flatMap(new Function<Integer, Flowable<Optional<List<T>>>>() {
+                                                            @Override
+                                                            public Flowable<Optional<List<T>>> apply(Integer deleteCount) throws Exception {
+                                                                return syncedStore.insertOrUpdate(originalItems.get());
+                                                            }
+                                                        })
+                                                        .flatMap(new Function<Optional<List<T>>, Flowable<Optional<List<T>>>>() {
+                                                            @Override
+                                                            public Flowable<Optional<List<T>>> apply(Optional<List<T>> notUsed) {
+                                                                return Flowable.error(throwable);
+                                                            }
+                                                        });
+                                                }
+                                            }
+                                        })
+                                        .flatMap(new Function<Optional<List<T>>, Flowable<Optional<List<T>>>>() {
+                                            @Override
+                                            public Flowable<Optional<List<T>>> apply(Optional<List<T>> itemInsertedOrUpdated) {
+                                                return syncedStore.insertOrUpdate(itemInsertedOrUpdated.get());
+                                            }
+                                        })
+                            );
+                        }
+                    });
+        } else {
+            flowStorage = dao.insertOrUpdate(items);
+        }
+
+        return flowStorage;
     }
 
     @Override
@@ -275,40 +346,37 @@ public abstract class StoreService<T> extends StoreDao<T> {
                     .flatMap(new Function<Optional<T>, Flowable<Optional<T>>>() {
                         @Override
                         public Flowable<Optional<T>> apply(final Optional<T> originalItem) throws Exception {
-                            return syncedStore.insertOrUpdate(item)
-                                .flatMap(new Function<Optional<T>, Flowable<Optional<T>>>() {
-                                    @Override
-                                    public Flowable<Optional<T>> apply(Optional<T> t) throws Exception {
-                                        return dao.insertOrUpdate(item)
-                                                .onErrorResumeNext(new Function<Throwable, Flowable<Optional<T>>>() {
-                                                    @Override
-                                                    public Flowable<Optional<T>> apply(final Throwable throwable) throws Exception {
-                                                        // the item did not exist before
-                                                        if(originalItem.isNull()){
-                                                            return syncedStore.delete(item).flatMap(new Function<Integer, Flowable<Optional<T>>>() {
-                                                                @Override
-                                                                public Flowable<Optional<T>> apply(Integer notUsed) throws Exception {
-                                                                    return Flowable.error(throwable);
-                                                                }
-                                                            });
-                                                        } else { // it did exists, re-apply previous version
-                                                            return syncedStore.insertOrUpdate(originalItem.get()).flatMap(new Function<Optional<T>, Flowable<Optional<T>>>() {
-                                                                @Override
-                                                                public Flowable<Optional<T>> apply(Optional<T> notUsed) throws Exception {
-                                                                    return Flowable.error(throwable);
-                                                                }
-                                                            });
-                                                        }
+                            return Flowable.concat(
+                                    syncedStore.insertOrUpdate(item),
+                                    dao.insertOrUpdate(item)
+                                            .onErrorResumeNext(new Function<Throwable, Flowable<Optional<T>>>() {
+                                                @Override
+                                                public Flowable<Optional<T>> apply(final Throwable throwable) throws Exception {
+                                                    // the item did not exist before
+                                                    if(originalItem.isNull()){
+                                                        return syncedStore.delete(item).flatMap(new Function<Integer, Flowable<Optional<T>>>() {
+                                                            @Override
+                                                            public Flowable<Optional<T>> apply(Integer notUsed) throws Exception {
+                                                                return Flowable.error(throwable);
+                                                            }
+                                                        });
+                                                    } else { // it did exists, re-apply previous version
+                                                        return syncedStore.insertOrUpdate(originalItem.get()).flatMap(new Function<Optional<T>, Flowable<Optional<T>>>() {
+                                                            @Override
+                                                            public Flowable<Optional<T>> apply(Optional<T> notUsed) throws Exception {
+                                                                return Flowable.error(throwable);
+                                                            }
+                                                        });
                                                     }
-                                                })
-                                                .flatMap(new Function<Optional<T>, Flowable<Optional<T>>>() {
-                                                    @Override
-                                                    public Flowable<Optional<T>> apply(Optional<T> itemInsertedOrUpdated) throws Exception {
-                                                        return syncedStore.insertOrUpdate(itemInsertedOrUpdated.get());
-                                                    }
-                                                });
-                                    }
-                                });
+                                                }
+                                            })
+                                            .flatMap(new Function<Optional<T>, Flowable<Optional<T>>>() {
+                                                @Override
+                                                public Flowable<Optional<T>> apply(Optional<T> itemInsertedOrUpdated) throws Exception {
+                                                    return syncedStore.insertOrUpdate(itemInsertedOrUpdated.get());
+                                                }
+                                            })
+                            );
                         }
                     });
         } else {
