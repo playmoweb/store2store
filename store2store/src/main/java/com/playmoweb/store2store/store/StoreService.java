@@ -6,8 +6,7 @@ import com.playmoweb.store2store.utils.SortingMode;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.reactivex.Observable;
-import io.reactivex.ObservableSource;
+import io.reactivex.Flowable;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.functions.Function;
 
@@ -79,16 +78,15 @@ public abstract class StoreService<T> extends StoreDao<T> {
     }
 
     @Override
-    public final Observable<List<T>> getAll(final Filter filter, final SortingMode sortingMode) {
-        List<Observable<List<T>>> observables = new ArrayList<>();
-        Observable<List<T>> obsStorage = dao.getAll(filter, sortingMode);
+    public final Flowable<List<T>> getAll(final Filter filter, final SortingMode sortingMode) {
+        List<Flowable<List<T>>> flowables = new ArrayList<>();
+        Flowable<List<T>> flowStorage = dao.getAll(filter, sortingMode);
 
         if(hasSyncedStore()) {
-            // sync response with syncedStore
-            obsStorage = obsStorage
-                    .flatMap(new Function<List<T>, ObservableSource<List<T>>>() {
+            flowStorage = flowStorage
+                    .flatMap(new Function<List<T>, Flowable<List<T>>>() {
                         @Override
-                        public ObservableSource<List<T>> apply(final List<T> items) throws Exception {
+                        public Flowable<List<T>> apply(List<T> items) throws Exception {
                             final List<T> copy = new ArrayList<>(items);
                             if(filter == null) {
                                 // full replacement, we clean up the Store dao
@@ -99,115 +97,199 @@ public abstract class StoreService<T> extends StoreDao<T> {
                                     }
                                 });
                             }
-                            return Observable.just(copy);
+                            return Flowable.just(copy);
                         }
                     })
-                    .flatMap(new Function<List<T>, ObservableSource<List<T>>>() {
+                    .flatMap(new Function<List<T>, Flowable<List<T>>>() {
                         @Override
-                        public ObservableSource<List<T>> apply(List<T> items) throws Exception {
-                            return syncedStore.insertOrUpdate(items)
-                                    .flatMap(new Function<List<T>, ObservableSource<List<T>>>() {
-                                        @Override
-                                        public ObservableSource<List<T>> apply(List<T> ts) throws Exception {
-                                            return syncedStore.getAll(filter, sortingMode);
-                                        }
-                                    });
+                        public Flowable<List<T>> apply(List<T> items) throws Exception {
+                            return syncedStore.insertOrUpdate(items);
                         }
                     });
 
-            observables.add(syncedStore.getAll(filter, sortingMode)); // add synced store call, first in list
+            flowables.add(syncedStore.getAll(filter, sortingMode));
         }
 
-        observables.add(obsStorage);
-        return Observable.concat(observables);
+        flowables.add(flowStorage);
+        return Flowable.concat(flowables);
     }
 
-    public final Observable<List<T>> getAll(final Filter filter) {
+    public final Flowable<List<T>> getAll(final Filter filter) {
         return getAll(filter, SortingMode.DEFAULT);
     }
 
-    public final Observable<List<T>> getAll() {
+    public final Flowable<List<T>> getAll() {
         return getAll(null);
     }
 
     @Override
-    public Observable<List<T>> insert(final List<T> items) {
-        List<Observable<List<T>>> observables = new ArrayList<>();
-        Observable<List<T>> obsStorage = dao.insert(items);
+    public Flowable<T> getOne(final Filter filter, final SortingMode sortingMode) {
+        List<Flowable<T>> flowables = new ArrayList<>();
+        Flowable<T> flowStorage = dao.getOne(filter, sortingMode);
 
         if(hasSyncedStore()) {
-            obsStorage = obsStorage
-                    .onErrorResumeNext(new Function<Throwable, ObservableSource<List<T>>>() {
+            flowStorage = flowStorage
+                    .flatMap(new Function<T, Flowable<T>>() {
                         @Override
-                        public ObservableSource<List<T>> apply(final Throwable throwable) throws Exception {
-                            return syncedStore.delete(items).flatMap(new Function<Object, ObservableSource<List<T>>>() {
+                        public Flowable<T> apply(T items) throws Exception {
+                            return syncedStore.insertOrUpdate(items);
+                        }
+                    });
+
+            flowables.add(syncedStore.getOne(filter, sortingMode));
+        }
+
+        flowables.add(flowStorage);
+        return Flowable.concat(flowables);
+    }
+
+    public Flowable<T> getOne(final Filter filter) {
+        return getOne(filter, null);
+    }
+
+    public Flowable<T> getOne(final SortingMode sortingMode) {
+        return getOne(null, sortingMode);
+    }
+
+    public Flowable<T> getOne() {
+        return getOne(null, null);
+    }
+
+    public Flowable<T> getById(final int id) {
+        List<Flowable<T>> flowables = new ArrayList<>();
+        Flowable<T> flowStorage = dao.getById(id);
+
+        if(hasSyncedStore()) {
+            flowStorage = flowStorage
+                    .flatMap(new Function<T, Flowable<T>>() {
+                        @Override
+                        public Flowable<T> apply(final T item) throws Exception {
+                            return syncedStore.insertOrUpdate(item);
+                        }
+                    });
+
+            flowables.add(syncedStore.getById(id));
+        }
+
+        flowables.add(flowStorage);
+        return Flowable.concat(flowables);
+    }
+
+    @Override
+    public Flowable<List<T>> insert(final List<T> items) {
+        List<Flowable<List<T>>> flowables = new ArrayList<>();
+        Flowable<List<T>> flowStorage = dao.insert(items);
+
+        if(hasSyncedStore()) {
+            flowStorage = flowStorage
+                    .onErrorResumeNext(new Function<Throwable, Flowable<List<T>>>() {
+                        @Override
+                        public Flowable<List<T>> apply(final Throwable throwable) throws Exception {
+                            return syncedStore.delete(items).flatMap(new Function<Object, Flowable<List<T>>>() {
                                 @Override
-                                public ObservableSource<List<T>> apply(Object o) throws Exception {
-                                    return Observable.error(throwable);
+                                public Flowable<List<T>> apply(Object o) throws Exception {
+                                    return Flowable.error(throwable);
                                 }
                             });
                         }
                     })
-                    .flatMap(new Function<List<T>, ObservableSource<List<T>>>() {
+                    .flatMap(new Function<List<T>, Flowable<List<T>>>() {
                         @Override
-                        public ObservableSource<List<T>> apply(List<T> it) throws Exception {
+                        public Flowable<List<T>> apply(List<T> it) throws Exception {
                             return syncedStore.insertOrUpdate(it);
                         }
                     });
 
-            observables.add(syncedStore.insert(items));
+            flowables.add(syncedStore.insert(items));
         }
 
-        observables.add(obsStorage);
-        return Observable.concat(observables);
+        flowables.add(flowStorage);
+        return Flowable.concat(flowables);
     }
 
     @Override
-    public Observable<T> insert(final T item) {
-        List<Observable<T>> observables = new ArrayList<>();
-        Observable<T> obsStorage = dao.insert(item);
+    public Flowable<T> insert(final T item) {
+        List<Flowable<T>> flowables = new ArrayList<>();
+        Flowable<T> flowStorage = dao.insert(item);
 
         if(hasSyncedStore()) {
-            obsStorage = obsStorage
-                    .onErrorResumeNext(new Function<Throwable, ObservableSource<T>>() {
+            flowStorage = flowStorage
+                    .onErrorResumeNext(new Function<Throwable, Flowable<T>>() {
                         @Override
-                        public ObservableSource<T> apply(final Throwable throwable) throws Exception {
-                            return syncedStore.delete(item).flatMap(new Function<Object, ObservableSource<T>>() {
+                        public Flowable<T> apply(final Throwable throwable) throws Exception {
+                            return syncedStore.delete(item).flatMap(new Function<Object, Flowable<T>>() {
                                 @Override
-                                public ObservableSource<T> apply(Object o) throws Exception {
-                                    return Observable.error(throwable);
+                                public Flowable<T> apply(Object o) throws Exception {
+                                    return Flowable.error(throwable);
                                 }
                             });
                         }
                     })
-                    .flatMap(new Function<T, ObservableSource<T>>() {
+                    .flatMap(new Function<T, Flowable<T>>() {
                         @Override
-                        public ObservableSource<T> apply(T it) throws Exception {
+                        public Flowable<T> apply(T it) throws Exception {
                             return syncedStore.insertOrUpdate(it);
                         }
                     });
 
-            observables.add(syncedStore.insert(item));
+            flowables.add(syncedStore.insert(item));
         }
 
-        observables.add(obsStorage);
-        return Observable.concat(observables);
+        flowables.add(flowStorage);
+        return Flowable.concat(flowables);
     }
 
     @Override
-    public Observable<List<T>> insertOrUpdate(List<T> items) {
+    public Flowable<List<T>> insertOrUpdate(final List<T> items) {
         return dao.insertOrUpdate(items);
     }
 
     @Override
-    public Observable<T> insertOrUpdate(T item) {
-        return dao.insertOrUpdate(item);
+    public Flowable<T> insertOrUpdate(final T item) {
+        Flowable<T> flowStorage;
+
+        if(hasSyncedStore()) {
+            flowStorage = syncedStore.getOne(item) // get a copy before trying to update/insert
+                    .flatMap(new Function<T, Flowable<T>>() {
+                        @Override
+                        public Flowable<T> apply(final T originalItem) throws Exception {
+                            return syncedStore.insertOrUpdate(item)
+                                .flatMap(new Function<T, Flowable<T>>() {
+                                    @Override
+                                    public Flowable<T> apply(T t) throws Exception {
+                                        return dao.insertOrUpdate(item)
+                                                .onErrorResumeNext(new Function<Throwable, Flowable<T>>() {
+                                                    @Override
+                                                    public Flowable<T> apply(final Throwable throwable) throws Exception {
+                                                        return syncedStore.insertOrUpdate(originalItem).flatMap(new Function<T, Flowable<T>>() {
+                                                                    @Override
+                                                                    public Flowable<T> apply(T t) throws Exception {
+                                                                        return Flowable.error(throwable);
+                                                                    }
+                                                                });
+                                                    }
+                                                })
+                                                .flatMap(new Function<T, Flowable<T>>() {
+                                                    @Override
+                                                    public Flowable<T> apply(T itemInsertedOrUpdated) throws Exception {
+                                                        return syncedStore.insertOrUpdate(itemInsertedOrUpdated);
+                                                    }
+                                                });
+                                    }
+                                });
+                        }
+                    });
+        } else {
+            flowStorage = dao.insertOrUpdate(item);
+        }
+
+        return flowStorage;
     }
 
     @Override
-    public Observable<Integer> deleteAll() {
-        List<Observable<Integer>> observables = new ArrayList<>();
-        Observable<Integer> obsStorage = dao.deleteAll();
+    public Flowable<Integer> deleteAll() {
+        List<Flowable<Integer>> flowables = new ArrayList<>();
+        Flowable<Integer> flowStorage = dao.deleteAll();
 
         // TODO improve the deleteAll method in case of double fail
         // copy the syncedStore for insert if double fail
@@ -215,122 +297,87 @@ public abstract class StoreService<T> extends StoreDao<T> {
         // if error, try getAll()
         // if error again => re-insert syncedStore datas (better than nothing)
         // if not error, insert fresh datas
-        //
 
         if(hasSyncedStore()) {
-            obsStorage = obsStorage
-                    .onErrorResumeNext(new Function<Throwable, ObservableSource<Integer>>() {
+            flowStorage = flowStorage
+                    .onErrorResumeNext(new Function<Throwable, Flowable<Integer>>() {
                         @Override
-                        public ObservableSource<Integer> apply(final Throwable throwable) throws Exception {
-                            return getAll()
-                                    .flatMap(new Function<List<T>, ObservableSource<List<T>>>() {
+                        public Flowable<Integer> apply(final Throwable throwable) throws Exception {
+                            return dao.getAll(null, null)
+                                    .flatMap(new Function<List<T>, Flowable<List<T>>>() {
                                         @Override
-                                        public ObservableSource<List<T>> apply(final List<T> items) throws Exception {
+                                        public Flowable<List<T>> apply(final List<T> items) throws Exception {
                                             return syncedStore.insertOrUpdate(items);
                                         }
                                     })
-                                    .flatMap(new Function<List<T>, ObservableSource<Integer>>() {
+                                    .flatMap(new Function<List<T>, Flowable<Integer>>() {
                                         @Override
-                                        public ObservableSource<Integer> apply(List<T> reinsertedItems) throws Exception {
-                                            return Observable.error(throwable);
+                                        public Flowable<Integer> apply(List<T> reinsertedItems) throws Exception {
+                                            return Flowable.error(throwable);
                                         }
                                     });
                         }
                     });
 
-            observables.add(syncedStore.deleteAll());
+            flowables.add(syncedStore.deleteAll());
         }
 
-        observables.add(obsStorage);
-        return Observable.concat(observables);
+        flowables.add(flowStorage);
+        return Flowable.concat(flowables);
     }
 
     @Override
-    public Observable<Integer> delete(final List<T> items) {
-        List<Observable<Integer>> observables = new ArrayList<>();
-        Observable<Integer> obsStorage = dao.delete(items);
+    public Flowable<Integer> delete(final List<T> items) {
+        List<Flowable<Integer>> flowables = new ArrayList<>();
+        Flowable<Integer> flowStorage = dao.delete(items);
 
         if(hasSyncedStore()) {
-            obsStorage = obsStorage
-                    .onErrorResumeNext(new Function<Throwable, ObservableSource<Integer>>() {
+            flowStorage = flowStorage
+                    .onErrorResumeNext(new Function<Throwable, Flowable<Integer>>() {
                         @Override
-                        public ObservableSource<Integer> apply(final Throwable throwable) throws Exception {
+                        public Flowable<Integer> apply(final Throwable throwable) throws Exception {
                             return syncedStore.insertOrUpdate(items)
-                                    .flatMap(new Function<List<T>, ObservableSource<Integer>>() {
+                                    .flatMap(new Function<List<T>, Flowable<Integer>>() {
                                         @Override
-                                        public ObservableSource<Integer> apply(List<T> reinsertedItem) throws Exception {
-                                            return Observable.error(throwable);
+                                        public Flowable<Integer> apply(List<T> reinsertedItem) throws Exception {
+                                            return Flowable.error(throwable);
                                         }
                                     });
                         }
                     });
 
-            observables.add(syncedStore.delete(items));
+            flowables.add(syncedStore.delete(items));
         }
 
-        observables.add(obsStorage);
-        return Observable.concat(observables);
+        flowables.add(flowStorage);
+        return Flowable.concat(flowables);
     }
 
     @Override
-    public Observable<Integer> delete(final T item) {
-        List<Observable<Integer>> observables = new ArrayList<>();
-        Observable<Integer> obsStorage = dao.delete(item);
+    public Flowable<Integer> delete(final T item) {
+        List<Flowable<Integer>> flowables = new ArrayList<>();
+        Flowable<Integer> flowStorage = dao.delete(item);
 
         if(hasSyncedStore()) {
-            obsStorage = obsStorage
-                    .onErrorResumeNext(new Function<Throwable, ObservableSource<Integer>>() {
+            flowStorage = flowStorage
+                    .onErrorResumeNext(new Function<Throwable, Flowable<Integer>>() {
                         @Override
-                        public ObservableSource<Integer> apply(final Throwable throwable) throws Exception {
+                        public Flowable<Integer> apply(final Throwable throwable) throws Exception {
                             return syncedStore.insertOrUpdate(item)
-                                    .flatMap(new Function<T, ObservableSource<Integer>>() {
+                                    .flatMap(new Function<T, Flowable<Integer>>() {
                                         @Override
-                                        public ObservableSource<Integer> apply(T reinsertedItem) throws Exception {
+                                        public Flowable<Integer> apply(T reinsertedItem) throws Exception {
                                             // we could emit a new Integer(0) before the error but it breaks the concept of rollbackIfErrorWithoutOnNext
-                                            return Observable.error(throwable);
+                                            return Flowable.error(throwable);
                                         }
                                     });
                         }
                     });
 
-            observables.add(syncedStore.delete(item));
+            flowables.add(syncedStore.delete(item));
         }
 
-        observables.add(obsStorage);
-        return Observable.concat(observables);
+        flowables.add(flowStorage);
+        return Flowable.concat(flowables);
     }
-
-/*
-    /**
-     * Wrap an emitter into another Observer
-     * @param emitter
-     * @param <S>
-     * @return
-     */
-/*
-    private <S> DisposableObserver<S> wrapEmitterInNewObserver(final ObservableEmitter<S> emitter, final boolean shouldCompleteEmitter){
-        return new DisposableObserver<S>() {
-            @Override
-            public void onNext(S value) {
-                if(!emitter.isDisposed()) {
-                    emitter.onNext(value);
-                }
-            }
-
-            @Override
-            public void onError(Throwable e) {
-                if(!emitter.isDisposed()) {
-                    emitter.onError(e);
-                }
-            }
-
-            @Override
-            public void onComplete() {
-                if(!emitter.isDisposed() && shouldCompleteEmitter) {
-                    emitter.onComplete();
-                }
-            }
-        };
-    }
-*/
 }
