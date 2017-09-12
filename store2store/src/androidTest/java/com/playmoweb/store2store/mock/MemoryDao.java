@@ -32,6 +32,20 @@ public class MemoryDao extends StoreDao<TestModel> {
     }
 
     @Override
+    public Flowable<Optional<List<TestModel>>> getAll(final List<TestModel> items) {
+        List<TestModel> output = new ArrayList<>();
+        for(TestModel toFind : items){
+            for(TestModel tm : models){
+                if(tm.getId() == toFind.getId()){
+                    output.add(tm);
+                }
+            }
+        }
+
+        return Flowable.just(Optional.wrap(output));
+    }
+
+    @Override
     public Flowable<Optional<TestModel>> getOne(Filter filter, SortingMode sortingMode) {
         if(sortingMode != null && sortingMode.sort == SortType.DESCENDING){
             return Flowable.just(Optional.wrap(models.get(models.size() - 1)));
@@ -72,14 +86,14 @@ public class MemoryDao extends StoreDao<TestModel> {
     }
 
     @Override
-    public Flowable<Integer> delete(List<TestModel> items) {
+    public Flowable<Integer> delete(final List<TestModel> items) {
         List<TestModel> output = new ArrayList<>();
 
         int found = 0;
         for (TestModel tm : models) {
             boolean foundInDeleteList = false;
             for(TestModel model : items) {
-                if(tm.getId() != model.getId()) {
+                if(tm.getId() == model.getId()) {
                     foundInDeleteList = true;
                     found++;
                     break;

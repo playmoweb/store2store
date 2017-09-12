@@ -9,7 +9,7 @@ package com.playmoweb.store2store.mock;
 public class TestModel{
     private int id;
     private String name;
-    private boolean available;
+    private boolean available = false;
 
     public TestModel(int id) {
         this.id = id;

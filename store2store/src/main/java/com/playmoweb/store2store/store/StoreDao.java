@@ -18,6 +18,10 @@ public abstract class StoreDao<T> {
         throw new UnsupportedOperationException("This method has not been implemented in the child class");
     }
 
+    public Flowable<Optional<List<T>>> getAll(List<T> items) {
+        throw new UnsupportedOperationException("This method has not been implemented in the child class");
+    }
+
     public Flowable<Optional<T>> getOne(final Filter filter, final SortingMode sortingMode) {
         throw new UnsupportedOperationException("This method has not been implemented in the child class");
     }
