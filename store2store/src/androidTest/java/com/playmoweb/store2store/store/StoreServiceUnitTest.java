@@ -6,6 +6,8 @@ import com.playmoweb.store2store.mock.MemoryDao;
 import com.playmoweb.store2store.mock.MemoryStore;
 import com.playmoweb.store2store.mock.TestModel;
 import com.playmoweb.store2store.mock.TestStore;
+import com.playmoweb.store2store.utils.SortType;
+import com.playmoweb.store2store.utils.SortingMode;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -17,8 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.observers.TestObserver;
 import io.reactivex.schedulers.Schedulers;
+import io.reactivex.subscribers.TestSubscriber;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -41,14 +43,85 @@ public class StoreServiceUnitTest {
     }
 
     @Test
+    public void testGetOneDescending(){
+        MemoryDao.models.clear();
+        List<TestModel> list = new ArrayList<>();
+        list.add(new TestModel(10));
+        list.add(new TestModel(30));
+        memoryStore.insertOrUpdate(list);
+
+        TestSubscriber<TestModel> observer = new TestSubscriber<>();
+        disposables.add(testStore.getOne(new SortingMode("id", SortType.DESCENDING))
+                .subscribeOn(Schedulers.io())
+                .subscribeWith(observer));
+
+        observer.awaitTerminalEvent(5, SECONDS);
+        observer.assertComplete();
+        observer.assertNoErrors();
+
+        Assert.assertEquals(2, MemoryDao.models.size());
+
+        TestModel tm = observer.values().get(0);
+        Assert.assertEquals(30, tm.getId());
+    }
+
+    @Test
+    public void testGetOneAscending(){
+        MemoryDao.models.clear();
+        List<TestModel> list = new ArrayList<>();
+        list.add(new TestModel(10));
+        list.add(new TestModel(30));
+        memoryStore.insertOrUpdate(list);
+
+        TestSubscriber<TestModel> observer = new TestSubscriber<>();
+        disposables.add(testStore.getOne()
+                .subscribeOn(Schedulers.io())
+                .subscribeWith(observer));
+
+        observer.awaitTerminalEvent(5, SECONDS);
+        observer.assertComplete();
+        observer.assertNoErrors();
+
+        Assert.assertEquals(2, MemoryDao.models.size());
+
+        TestModel tm = observer.values().get(0);
+        Assert.assertEquals(10, tm.getId());
+    }
+
+    @Test
+    public void testGetOneWithError(){
+        testStore.shouldThrowError(true);
+        MemoryDao.models.clear();
+        List<TestModel> list = new ArrayList<>();
+        list.add(new TestModel(10));
+        list.add(new TestModel(20));
+        list.add(new TestModel(30));
+        memoryStore.insertOrUpdate(list);
+
+        TestSubscriber<TestModel> observer = new TestSubscriber<>();
+        disposables.add(testStore.getOne()
+                .subscribeOn(Schedulers.io())
+                .subscribeWith(observer));
+
+        observer.awaitTerminalEvent(2, SECONDS);
+        observer.assertError(Throwable.class);
+        observer.assertErrorMessage("getOne.error");
+
+        testStore.shouldThrowError(false);
+
+        Assert.assertEquals(3, MemoryDao.models.size());
+    }
+
+    @Test
     public void testGetAll(){
+        MemoryDao.models.clear();
         List<TestModel> list = new ArrayList<>();
         list.add(new TestModel(1));
         list.add(new TestModel(2));
         list.add(new TestModel(3));
         memoryStore.insertOrUpdate(list);
 
-        TestObserver<List<TestModel>> observer = new TestObserver<>();
+        TestSubscriber<List<TestModel>> observer = new TestSubscriber<>();
         disposables.add(testStore.getAll(null, null)
                 .subscribeOn(Schedulers.io())
                 .subscribeWith(observer));
@@ -78,7 +151,7 @@ public class StoreServiceUnitTest {
         list.add(new TestModel(3));
         memoryStore.insertOrUpdate(list);
 
-        TestObserver<List<TestModel>> observer = new TestObserver<>();
+        TestSubscriber<List<TestModel>> observer = new TestSubscriber<>();
         disposables.add(testStore.getAll(null, null)
                 .subscribeOn(Schedulers.io())
                 .subscribeWith(observer));
@@ -107,7 +180,7 @@ public class StoreServiceUnitTest {
         list.add(new TestModel(2));
         list.add(new TestModel(3));
 
-        TestObserver<List<TestModel>> observer = new TestObserver<>();
+        TestSubscriber<List<TestModel>> observer = new TestSubscriber<>();
         disposables.add(testStore.insert(list)
                 .subscribeOn(Schedulers.io())
                 .subscribeWith(observer));
@@ -129,7 +202,7 @@ public class StoreServiceUnitTest {
         list.add(new TestModel(2));
         list.add(new TestModel(3));
 
-        TestObserver<List<TestModel>> observer = new TestObserver<>();
+        TestSubscriber<List<TestModel>> observer = new TestSubscriber<>();
         disposables.add(testStore.insert(list)
                 .subscribeOn(Schedulers.io())
                 .subscribeWith(observer));
@@ -149,7 +222,7 @@ public class StoreServiceUnitTest {
 
         TestModel model = new TestModel(99);
 
-        TestObserver<TestModel> observer = new TestObserver<>();
+        TestSubscriber<TestModel> observer = new TestSubscriber<>();
         disposables.add(testStore.insert(model)
                 .subscribeOn(Schedulers.io())
                 .subscribeWith(observer));
@@ -174,7 +247,7 @@ public class StoreServiceUnitTest {
 
         TestModel model = new TestModel(99);
 
-        TestObserver<TestModel> observer = new TestObserver<>();
+        TestSubscriber<TestModel> observer = new TestSubscriber<>();
         disposables.add(testStore.insert(model)
                 .subscribeOn(Schedulers.io())
                 .subscribeWith(observer));
@@ -197,7 +270,7 @@ public class StoreServiceUnitTest {
         memoryStore.insertOrUpdate(list);
 
         TestModel model = new TestModel(2);
-        TestObserver<Integer> observer = new TestObserver<>();
+        TestSubscriber<Integer> observer = new TestSubscriber<>();
         disposables.add(testStore.delete(model)
                 .subscribeOn(Schedulers.io())
                 .subscribeWith(observer));
@@ -230,7 +303,7 @@ public class StoreServiceUnitTest {
         memoryStore.insertOrUpdate(list);
 
         TestModel model = new TestModel(2);
-        TestObserver<Integer> observer = new TestObserver<>();
+        TestSubscriber<Integer> observer = new TestSubscriber<>();
         disposables.add(testStore.delete(model)
                 .subscribeOn(Schedulers.io())
                 .subscribeWith(observer));
@@ -259,7 +332,7 @@ public class StoreServiceUnitTest {
         list.add(new TestModel(3));
         memoryStore.insertOrUpdate(list);
 
-        TestObserver<Integer> observer = new TestObserver<>();
+        TestSubscriber<Integer> observer = new TestSubscriber<>();
         disposables.add(testStore.deleteAll()
                 .subscribeOn(Schedulers.io())
                 .subscribeWith(observer));
@@ -285,7 +358,7 @@ public class StoreServiceUnitTest {
         list.add(new TestModel(3));
         memoryStore.insertOrUpdate(list);
 
-        TestObserver<Integer> observer = new TestObserver<>();
+        TestSubscriber<Integer> observer = new TestSubscriber<>();
         disposables.add(testStore.deleteAll()
                 .subscribeOn(Schedulers.io())
                 .subscribeWith(observer));

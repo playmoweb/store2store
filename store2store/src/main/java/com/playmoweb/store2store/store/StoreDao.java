@@ -5,7 +5,7 @@ import com.playmoweb.store2store.utils.SortingMode;
 
 import java.util.List;
 
-import io.reactivex.Observable;
+import io.reactivex.Flowable;
 
 /**
  * @author  Thibaud Giovannetti
@@ -14,60 +14,64 @@ import io.reactivex.Observable;
  */
 public abstract class StoreDao<T> {
 
-    public Observable<List<T>> getAll(final Filter filter, final SortingMode sortingMode) {
+    public Flowable<List<T>> getAll(final Filter filter, final SortingMode sortingMode) {
         throw new UnsupportedOperationException("This method has not been implemented in the child class");
     }
 
-    public Observable<T> getOne(final Filter filter, final SortingMode sortingMode) {
+    public Flowable<T> getOne(final Filter filter, final SortingMode sortingMode) {
         throw new UnsupportedOperationException("This method has not been implemented in the child class");
     }
 
-    public Observable<T> getById(final int id) {
+    public Flowable<T> getOne(final T item) {
         throw new UnsupportedOperationException("This method has not been implemented in the child class");
     }
 
-    public Observable<T> insert(final T item) {
+    public <T> Flowable<T> getById(final int id) {
         throw new UnsupportedOperationException("This method has not been implemented in the child class");
     }
 
-    public Observable<List<T>> insert(final List<T> items) {
+    public Flowable<T> insert(final T item) {
         throw new UnsupportedOperationException("This method has not been implemented in the child class");
     }
 
-    public Observable<T> update(final T item) {
+    public Flowable<List<T>> insert(final List<T> items) {
         throw new UnsupportedOperationException("This method has not been implemented in the child class");
     }
 
-    public Observable<List<T>> update(final List<T> items) {
+    public Flowable<T> update(final T item) {
         throw new UnsupportedOperationException("This method has not been implemented in the child class");
     }
 
-    public Observable<T> insertOrUpdate(final T item) {
+    public Flowable<List<T>> update(final List<T> items) {
         throw new UnsupportedOperationException("This method has not been implemented in the child class");
     }
 
-    public Observable<List<T>> insertOrUpdate(final List<T> items) {
+    public Flowable<T> insertOrUpdate(final T item) {
         throw new UnsupportedOperationException("This method has not been implemented in the child class");
     }
 
-    /**
-     * @return  int  Number of items deleted
-     */
-    public Observable<Integer> delete(final List<T> items) {
-        throw new UnsupportedOperationException("This method has not been implemented in the child class");
-    }
-
-    /**
-     * @return  int  Number of items deleted
-     */
-    public Observable<Integer> delete(final T item) {
+    public Flowable<List<T>> insertOrUpdate(final List<T> items) {
         throw new UnsupportedOperationException("This method has not been implemented in the child class");
     }
 
     /**
      * @return  int  Number of items deleted
      */
-    public Observable<Integer> deleteAll() {
+    public Flowable<Integer> delete(final List<T> items) {
+        throw new UnsupportedOperationException("This method has not been implemented in the child class");
+    }
+
+    /**
+     * @return  int  Number of items deleted
+     */
+    public Flowable<Integer> delete(final T item) {
+        throw new UnsupportedOperationException("This method has not been implemented in the child class");
+    }
+
+    /**
+     * @return  int  Number of items deleted
+     */
+    public Flowable<Integer> deleteAll() {
         throw new UnsupportedOperationException("This method has not been implemented in the child class");
     }
 }
