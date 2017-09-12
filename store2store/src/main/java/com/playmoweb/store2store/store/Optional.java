@@ -9,6 +9,11 @@ package com.playmoweb.store2store.store;
  * @date    07/09/2017
  */
 public class Optional<T> {
+
+    public static <T> Optional<T> wrap(T obj){
+        return new Optional<>(obj);
+    }
+
     private final T optional;
 
     public Optional(T optional) {

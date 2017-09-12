@@ -1,5 +1,6 @@
 package com.playmoweb.store2store.mock;
 
+import com.playmoweb.store2store.store.Optional;
 import com.playmoweb.store2store.store.StoreDao;
 import com.playmoweb.store2store.store.StoreService;
 import com.playmoweb.store2store.utils.Filter;
@@ -33,7 +34,7 @@ public class TestStore extends StoreService<TestModel> {
      */
     private static class TestStoreDao extends StoreDao<TestModel> {
         @Override
-        public Flowable<List<TestModel>> getAll(Filter filter, SortingMode sortingMode) {
+        public Flowable<Optional<List<TestModel>>> getAll(Filter filter, SortingMode sortingMode) {
             if(shouldThrowError){
                 return Flowable.error(new Exception("getAll.error"));
             }
@@ -47,37 +48,37 @@ public class TestStore extends StoreService<TestModel> {
                 Collections.reverse(list);
             }
 
-            return Flowable.just(list).delay(1, TimeUnit.SECONDS);
+            return Flowable.just(Optional.wrap(list)).delay(1, TimeUnit.SECONDS);
         }
 
         @Override
-        public Flowable<TestModel> getOne(Filter filter, SortingMode sortingMode) {
+        public Flowable<Optional<TestModel>> getOne(Filter filter, SortingMode sortingMode) {
             if(shouldThrowError){
                 return Flowable.error(new Exception("getOne.error"));
             }
 
-            return getAll(filter, sortingMode).flatMap(new Function<List<TestModel>, Flowable<TestModel>>() {
+            return getAll(filter, sortingMode).flatMap(new Function<Optional<List<TestModel>>, Flowable<Optional<TestModel>>>() {
                 @Override
-                public Flowable<TestModel> apply(List<TestModel> testModels) throws Exception {
-                    return Flowable.just(testModels.get(0));
+                public Flowable<Optional<TestModel>> apply(Optional<List<TestModel>> testModels) throws Exception {
+                    return Flowable.just(Optional.wrap(testModels.get().get(0)));
                 }
             });
         }
 
         @Override
-        public Flowable<List<TestModel>> insert(List<TestModel> items) {
+        public Flowable<Optional<List<TestModel>>> insert(List<TestModel> items) {
             if(shouldThrowError){
                 return Flowable.error(new Exception("insert.error"));
             }
-            return Flowable.just(items).delay(1, TimeUnit.SECONDS);
+            return Flowable.just(Optional.wrap(items)).delay(1, TimeUnit.SECONDS);
         }
 
         @Override
-        public Flowable<TestModel> insert(TestModel item) {
+        public Flowable<Optional<TestModel>> insert(TestModel item) {
             if(shouldThrowError){
                 return Flowable.error(new Exception("insertSingle.error"));
             }
-            return Flowable.just(item).delay(1, TimeUnit.SECONDS);
+            return Flowable.just(Optional.wrap(item)).delay(1, TimeUnit.SECONDS);
         }
 
         @Override
@@ -105,10 +106,10 @@ public class TestStore extends StoreService<TestModel> {
 
             return getAll(null, null)
                     .delay(1, TimeUnit.SECONDS)
-                    .flatMap(new Function<List<TestModel>, Flowable<Integer>>() {
+                    .flatMap(new Function<Optional<List<TestModel>>, Flowable<Integer>>() {
                         @Override
-                        public Flowable<Integer> apply(List<TestModel> ts) throws Exception {
-                            return Flowable.just(ts.size());
+                        public Flowable<Integer> apply(Optional<List<TestModel>> ts) throws Exception {
+                            return Flowable.just(ts.get().size());
                         }
                     });
         }
