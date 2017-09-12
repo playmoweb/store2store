@@ -2,6 +2,7 @@ package com.playmoweb.store2store.mock;
 
 import android.util.Log;
 
+import com.playmoweb.store2store.store.Optional;
 import com.playmoweb.store2store.store.StoreDao;
 import com.playmoweb.store2store.utils.Filter;
 import com.playmoweb.store2store.utils.SortType;
@@ -25,21 +26,21 @@ public class MemoryDao extends StoreDao<TestModel> {
     public final static List<TestModel> models = new ArrayList<>(); // shared datastorage
 
     @Override
-    public Flowable<List<TestModel>> getAll(Filter filter, SortingMode sortingMode) {
+    public Flowable<Optional<List<TestModel>>> getAll(Filter filter, SortingMode sortingMode) {
         List<TestModel> copy = new ArrayList<>(models);
-        return Flowable.just(copy);
+        return Flowable.just(Optional.wrap(copy));
     }
 
     @Override
-    public Flowable<TestModel> getOne(Filter filter, SortingMode sortingMode) {
+    public Flowable<Optional<TestModel>> getOne(Filter filter, SortingMode sortingMode) {
         if(sortingMode != null && sortingMode.sort == SortType.DESCENDING){
-            return Flowable.just(models.get(models.size() - 1));
+            return Flowable.just(Optional.wrap(models.get(models.size() - 1)));
         }
-        return Flowable.just(models.get(0));
+        return Flowable.just(Optional.wrap(models.get(0)));
     }
 
     @Override
-    public Flowable<TestModel> getById(int id) {
+    public Flowable<Optional<TestModel>> getById(int id) {
         TestModel t = null;
         for(TestModel tm : models) {
             if(tm.getId() == id) {
@@ -47,22 +48,22 @@ public class MemoryDao extends StoreDao<TestModel> {
                 break;
             }
         }
-        return Flowable.just(t);
+        return Flowable.just(Optional.wrap(t));
     }
 
     @Override
-    public Flowable<TestModel> insertOrUpdate(TestModel object) {
-        return Flowable.just(insertObjectOrUpdate(object));
+    public Flowable<Optional<TestModel>> insertOrUpdate(TestModel object) {
+        return Flowable.just(Optional.wrap(insertObjectOrUpdate(object)));
     }
 
     @Override
-    public Flowable<List<TestModel>> insertOrUpdate(final List<TestModel> items) {
+    public Flowable<Optional<List<TestModel>>> insertOrUpdate(final List<TestModel> items) {
         Log.e("INSERT", "SIZE = "+items.size());
         for(int i = 0; i < items.size(); i++) {
             Log.e("INSERT", ""+items.get(i).getId());
             insertObjectOrUpdate(items.get(i));
         }
-        return Flowable.just(items);
+        return Flowable.just(Optional.wrap(items));
     }
 
     @Override
@@ -114,22 +115,22 @@ public class MemoryDao extends StoreDao<TestModel> {
     }
 
     @Override
-    public Flowable<TestModel> insert(TestModel item) {
+    public Flowable<Optional<TestModel>> insert(TestModel item) {
         return insertOrUpdate(item);
     }
 
     @Override
-    public Flowable<List<TestModel>> insert(List<TestModel> items) {
+    public Flowable<Optional<List<TestModel>>> insert(List<TestModel> items) {
         return insertOrUpdate(items);
     }
 
     @Override
-    public Flowable<TestModel> update(TestModel item) {
+    public Flowable<Optional<TestModel>> update(TestModel item) {
         return insertOrUpdate(item);
     }
 
     @Override
-    public Flowable<List<TestModel>> update(List<TestModel> items) {
+    public Flowable<Optional<List<TestModel>>> update(List<TestModel> items) {
         return insertOrUpdate(items);
     }
 

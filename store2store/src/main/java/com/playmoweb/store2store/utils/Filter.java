@@ -8,6 +8,7 @@ import java.util.WeakHashMap;
  */
 public class Filter extends WeakHashMap<String, Filter.KeyValuePair> {
     // TODO optimize access with a copy in an weak list
+    public static final Filter NONE = null;
 
     public Filter() {
         super();
