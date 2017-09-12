@@ -1,14 +1,12 @@
 package com.playmoweb.store2store.mock;
 
-import com.playmoweb.store2store.store.HasId;
-
 /**
  * Bean for tests purposes
  * @author  Thibaud Giovannetti
  * @by      Playmoweb
  * @date    28/02/2017
  */
-public class TestModel implements HasId {
+public class TestModel{
     private int id;
     private String name;
     private boolean available;
@@ -52,10 +50,5 @@ public class TestModel implements HasId {
             return id == ((TestModel) obj).getId();
         }
         return super.equals(obj);
-    }
-
-    @Override
-    public int getUniqueIdentifier() {
-        return id;
     }
 }
