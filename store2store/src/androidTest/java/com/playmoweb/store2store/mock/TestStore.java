@@ -105,6 +105,22 @@ public class TestStore extends StoreService<TestModel> {
         }
 
         @Override
+        public Flowable<Optional<TestModel>> update(TestModel item) {
+            if(shouldThrowError){
+                return Flowable.error(new Exception("updateSingle.error"));
+            }
+            return Flowable.just(Optional.wrap(item)).delay(1, TimeUnit.SECONDS);
+        }
+
+        @Override
+        public Flowable<Optional<List<TestModel>>> update(List<TestModel> items) {
+            if(shouldThrowError){
+                return Flowable.error(new Exception("update.error"));
+            }
+            return Flowable.just(Optional.wrap(items)).delay(1, TimeUnit.SECONDS);
+        }
+
+        @Override
         public Flowable<Integer> delete(TestModel item) {
             if(shouldThrowError){
                 return Flowable.error(new Exception("deleteSingle.error"));

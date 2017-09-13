@@ -549,6 +549,157 @@ public class StoreServiceUnitTest {
         Assert.assertEquals(3, MemoryDao.models.size());
     }
 
+    @Test
+    public void testUpdateList(){
+        models.clear();
+        List<TestModel> list = new ArrayList<>();
+        list.add(new TestModel(1));
+        list.add(new TestModel(2));
+        list.add(new TestModel(3));
+        memoryStore.insertOrUpdate(list);
+
+        List<TestModel> updateList = new ArrayList<>();
+        TestModel testModel = new TestModel(1);
+        testModel.setAvailable(true);
+        updateList.add(testModel);
+        testModel = new TestModel(3);
+        testModel.setAvailable(true);
+        updateList.add(testModel);
+
+        TestSubscriber<Optional<List<TestModel>>> observer = new TestSubscriber<>();
+        disposables.add(testStore.update(updateList)
+                .subscribeOn(Schedulers.io())
+                .subscribeWith(observer));
+
+        observer.awaitTerminalEvent(4, SECONDS);
+        observer.assertComplete();
+        observer.assertNoErrors();
+
+        Optional<List<TestModel>> results = observer.values().get(0);
+        Optional<List<TestModel>> resultsAfter = observer.values().get(1);
+        Assert.assertNotNull(results.get());
+        Assert.assertNotNull(resultsAfter.get());
+        Assert.assertEquals(2, results.get().size());
+        Assert.assertEquals(2, resultsAfter.get().size());
+
+        for(TestModel tm : results.get()){
+            Assert.assertTrue(tm.isAvailable());
+        }
+        for(TestModel tm : resultsAfter.get()){
+            Assert.assertTrue(tm.isAvailable());
+        }
+
+        Assert.assertEquals(3, models.size());
+        for(TestModel tm : models){
+            if(tm.getId() != 2){
+                Assert.assertTrue(tm.isAvailable());
+            }
+        }
+    }
+
+    @Test
+    public void testUpdateListWithError(){
+        models.clear();
+        testStore.shouldThrowError(true); // enable error
+
+        List<TestModel> list = new ArrayList<>();
+        list.add(new TestModel(1));
+        list.add(new TestModel(2));
+        list.add(new TestModel(3));
+        memoryStore.insertOrUpdate(list);
+
+        List<TestModel> updateList = new ArrayList<>();
+        TestModel testModel = new TestModel(1);
+        testModel.setAvailable(true);
+        updateList.add(testModel);
+        testModel = new TestModel(3);
+        testModel.setAvailable(true);
+        updateList.add(testModel);
+
+        TestSubscriber<Optional<List<TestModel>>> observer = new TestSubscriber<>();
+        disposables.add(testStore.update(updateList)
+                .subscribeOn(Schedulers.io())
+                .subscribeWith(observer));
+
+        observer.awaitTerminalEvent(4, SECONDS);
+        observer.assertError(Throwable.class);
+        observer.assertErrorMessage("update.error");
+
+        testStore.shouldThrowError(false); // disable error
+
+        Assert.assertEquals(3, models.size()); // should have been cleared
+        for(TestModel tm : models){
+            Assert.assertFalse(tm.isAvailable());
+        }
+    }
+
+    @Test
+    public void testUpdate(){
+        models.clear();
+        List<TestModel> list = new ArrayList<>();
+        list.add(new TestModel(1));
+        list.add(new TestModel(2));
+        list.add(new TestModel(3));
+        memoryStore.insertOrUpdate(list);
+
+        TestModel testModel = new TestModel(1);
+        testModel.setAvailable(true);
+
+        TestSubscriber<Optional<TestModel>> observer = new TestSubscriber<>();
+        disposables.add(testStore.update(testModel)
+                .subscribeOn(Schedulers.io())
+                .subscribeWith(observer));
+
+        observer.awaitTerminalEvent(4, SECONDS);
+        observer.assertComplete();
+        observer.assertNoErrors();
+
+        Optional<TestModel> results = observer.values().get(0);
+        Optional<TestModel> resultsAfter = observer.values().get(1);
+        Assert.assertNotNull(results.get());
+        Assert.assertNotNull(resultsAfter.get());
+        Assert.assertTrue(results.get().isAvailable());
+        Assert.assertTrue(resultsAfter.get().isAvailable());
+
+        Assert.assertEquals(3, models.size());
+        for(TestModel tm : models){
+            if(tm.getId() == 1){
+                Assert.assertTrue(tm.isAvailable());
+            }
+        }
+    }
+
+    @Test
+    public void testUpdateWithError(){
+        models.clear();
+        testStore.shouldThrowError(true); // enable error
+
+        List<TestModel> list = new ArrayList<>();
+        list.add(new TestModel(1));
+        list.add(new TestModel(2));
+        list.add(new TestModel(3));
+        memoryStore.insertOrUpdate(list);
+
+        TestModel testModel = new TestModel(1);
+        testModel.setAvailable(true);
+
+        TestSubscriber<Optional<TestModel>> observer = new TestSubscriber<>();
+        disposables.add(testStore.update(testModel)
+                .subscribeOn(Schedulers.io())
+                .subscribeWith(observer));
+
+        observer.awaitTerminalEvent(4, SECONDS);
+        observer.assertError(Throwable.class);
+        observer.assertErrorMessage("updateSingle.error");
+
+        testStore.shouldThrowError(false); // disable error
+
+        Assert.assertEquals(3, models.size()); // should have been cleared
+        for(TestModel tm : models){
+            Assert.assertFalse(tm.isAvailable());
+        }
+    }
+
     @After
     public void after() {
         disposables.clear();
