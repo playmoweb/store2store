@@ -1,7 +1,5 @@
 package com.playmoweb.store2store.mock;
 
-import android.util.Log;
-
 import com.playmoweb.store2store.store.Optional;
 import com.playmoweb.store2store.store.StoreDao;
 import com.playmoweb.store2store.utils.Filter;
@@ -77,9 +75,7 @@ public class MemoryDao extends StoreDao<TestModel> {
 
     @Override
     public Flowable<Optional<List<TestModel>>> insertOrUpdate(final List<TestModel> items) {
-        Log.e("INSERT", "SIZE = "+items.size());
         for(int i = 0; i < items.size(); i++) {
-            Log.e("INSERT", ""+items.get(i).getId());
             insertObjectOrUpdate(items.get(i));
         }
         return Flowable.just(Optional.wrap(items));
