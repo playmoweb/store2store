@@ -6,6 +6,7 @@ import com.playmoweb.store2store.utils.SortingMode;
 import java.util.List;
 
 import io.reactivex.Flowable;
+import io.reactivex.functions.Function;
 
 /**
  * @author Thibaud Giovannetti
@@ -77,5 +78,24 @@ public abstract class StoreDao<T> {
      */
     public Flowable<Integer> deleteAll() {
         throw new UnsupportedOperationException("This method has not been implemented in the child class");
+    }
+
+    /**
+     * Wrap an object into an flowable optional
+     */
+    protected <S> Flowable<Optional<S>> wrapOptional(S obj){
+        return Flowable.just(Optional.wrap(obj));
+    }
+
+    /**
+     * Wrap a flowable object into an flowable optional
+     */
+    protected <S> Flowable<Optional<S>> wrapOptional(Flowable<S> obj){
+        return obj.flatMap(new Function<S, Flowable<Optional<S>>>() {
+            @Override
+            public Flowable<Optional<S>> apply(S s) throws Exception {
+                return wrapOptional(s);
+            }
+        });
     }
 }

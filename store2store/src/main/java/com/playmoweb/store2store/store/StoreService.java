@@ -591,23 +591,4 @@ public abstract class StoreService<T> extends StoreDao<T> {
         flowables.add(flowStorage);
         return Flowable.concat(flowables);
     }
-
-    /**
-     * Wrap an object into an flowable optional
-     */
-    public <S> Flowable<Optional<S>> wrapOptional(S obj){
-        return Flowable.just(Optional.wrap(obj));
-    }
-
-    /**
-     * Wrap a flowable object into an flowable optional
-     */
-    public <S> Flowable<Optional<S>> wrapOptional(Flowable<S> obj){
-        return obj.flatMap(new Function<S, Flowable<Optional<S>>>() {
-            @Override
-            public Flowable<Optional<S>> apply(S s) throws Exception {
-                return wrapOptional(s);
-            }
-        });
-    }
 }
