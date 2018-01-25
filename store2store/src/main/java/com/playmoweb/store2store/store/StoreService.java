@@ -30,14 +30,6 @@ public abstract class StoreService<T> extends StoreDao<T> {
     private final StoreDao<T> dao;
 
     /**
-     * If true, this Service will be used as a cache (first call).
-     * It's a read-only feature (getAll, getById, getOne, ...).
-     *
-     * @warning If this service is used as a cache and its access is slow, it will reduce drastically the performances of syncing
-     */
-    private final boolean isCache;
-
-    /**
      * List of store synced with this one
      */
     private StoreService<T> syncedStore;
@@ -48,19 +40,11 @@ public abstract class StoreService<T> extends StoreDao<T> {
     protected final CompositeDisposable compositeDisposable = new CompositeDisposable();
 
     /**
-     * Create a typed Store
+     * Create a typed store
      */
     public StoreService(Class<T> clazz, StoreDao<T> dao) {
-        this(clazz, dao, false);
-    }
-
-    /**
-     * Create a typed store with cache information
-     */
-    public StoreService(Class<T> clazz, StoreDao<T> dao, boolean isCache) {
         this.clazz = clazz;
         this.dao = dao;
-        this.isCache = isCache;
     }
 
     /**
@@ -94,10 +78,6 @@ public abstract class StoreService<T> extends StoreDao<T> {
      */
     public boolean hasSyncedStore() {
         return syncedStore != null;
-    }
-
-    public boolean isCache() {
-        return isCache;
     }
 
     @Override
@@ -136,11 +116,7 @@ public abstract class StoreService<T> extends StoreDao<T> {
         flowables.add(syncedStore.getAll(filter, sortingMode));
         flowables.add(flowStorage);
 
-        if (syncedStore.isCache()) {
-            return Flowable.concatDelayError(flowables);
-        } else {
-            return Flowable.concat(flowables);
-        }
+        return Flowable.concat(flowables);
     }
 
     @Override
@@ -161,11 +137,7 @@ public abstract class StoreService<T> extends StoreDao<T> {
         flowables.add(syncedStore.getAll(items));
         flowables.add(flowStorage);
 
-        if (syncedStore.isCache()) {
-            return Flowable.concatDelayError(flowables);
-        } else {
-            return Flowable.concat(flowables);
-        }
+        return Flowable.concat(flowables);
     }
 
     public final Flowable<Optional<List<T>>> getAll(final Filter filter) {
@@ -194,11 +166,7 @@ public abstract class StoreService<T> extends StoreDao<T> {
         flowables.add(syncedStore.getOne(filter, sortingMode));
         flowables.add(flowStorage);
 
-        if (syncedStore.isCache()) {
-            return Flowable.concatDelayError(flowables);
-        } else {
-            return Flowable.concat(flowables);
-        }
+        return Flowable.concat(flowables);
     }
 
     @Override
@@ -219,11 +187,7 @@ public abstract class StoreService<T> extends StoreDao<T> {
         flowables.add(syncedStore.getOne(item));
         flowables.add(flowStorage);
 
-        if (syncedStore.isCache()) {
-            return Flowable.concatDelayError(flowables);
-        } else {
-            return Flowable.concat(flowables);
-        }
+        return Flowable.concat(flowables);
     }
 
     public Flowable<Optional<T>> getOne(final Filter filter) {
@@ -255,74 +219,72 @@ public abstract class StoreService<T> extends StoreDao<T> {
         flowables.add(syncedStore.getById(id));
         flowables.add(flowStorage);
 
-        if (syncedStore.isCache()) {
-            return Flowable.concatDelayError(flowables);
-        } else {
-            return Flowable.concat(flowables);
-        }
+        return Flowable.concat(flowables);
     }
 
     @Override
     public Flowable<Optional<List<T>>> insert(final List<T> items) {
-        List<Flowable<Optional<List<T>>>> flowables = new ArrayList<>();
         Flowable<Optional<List<T>>> flowStorage = dao.insert(items);
-
-        if (hasSyncedStore()) {
-            flowStorage = flowStorage
-                    .onErrorResumeNext(new Function<Throwable, Flowable<Optional<List<T>>>>() {
-                        @Override
-                        public Flowable<Optional<List<T>>> apply(final Throwable throwable) throws Exception {
-                            return syncedStore.delete(items).flatMap(new Function<Object, Flowable<Optional<List<T>>>>() {
-                                @Override
-                                public Flowable<Optional<List<T>>> apply(Object o) throws Exception {
-                                    return Flowable.error(throwable);
-                                }
-                            });
-                        }
-                    })
-                    .flatMap(new Function<Optional<List<T>>, Flowable<Optional<List<T>>>>() {
-                        @Override
-                        public Flowable<Optional<List<T>>> apply(Optional<List<T>> it) throws Exception {
-                            return syncedStore.insertOrUpdate(it.get());
-                        }
-                    });
-
-            flowables.add(syncedStore.insert(items));
+        if (!hasSyncedStore()) {
+            return flowStorage;
         }
 
+        final List<Flowable<Optional<List<T>>>> flowables = new ArrayList<>();
+        flowStorage = flowStorage
+                .onErrorResumeNext(new Function<Throwable, Flowable<Optional<List<T>>>>() {
+                    @Override
+                    public Flowable<Optional<List<T>>> apply(final Throwable throwable) throws Exception {
+                        return syncedStore.delete(items).flatMap(new Function<Object, Flowable<Optional<List<T>>>>() {
+                            @Override
+                            public Flowable<Optional<List<T>>> apply(Object o) throws Exception {
+                                return Flowable.error(throwable);
+                            }
+                        });
+                    }
+                })
+                .flatMap(new Function<Optional<List<T>>, Flowable<Optional<List<T>>>>() {
+                    @Override
+                    public Flowable<Optional<List<T>>> apply(Optional<List<T>> it) throws Exception {
+                        return syncedStore.insertOrUpdate(it.get());
+                    }
+                });
+
+        flowables.add(syncedStore.insert(items));
         flowables.add(flowStorage);
+
         return Flowable.concat(flowables);
     }
 
     @Override
     public Flowable<Optional<T>> insert(final T item) {
-        List<Flowable<Optional<T>>> flowables = new ArrayList<>();
         Flowable<Optional<T>> flowStorage = dao.insert(item);
-
-        if (hasSyncedStore()) {
-            flowStorage = flowStorage
-                    .onErrorResumeNext(new Function<Throwable, Flowable<Optional<T>>>() {
-                        @Override
-                        public Flowable<Optional<T>> apply(final Throwable throwable) throws Exception {
-                            return syncedStore.delete(item).flatMap(new Function<Integer, Flowable<Optional<T>>>() {
-                                @Override
-                                public Flowable<Optional<T>> apply(Integer zeroOrOne) throws Exception {
-                                    return Flowable.error(throwable);
-                                }
-                            });
-                        }
-                    })
-                    .flatMap(new Function<Optional<T>, Flowable<Optional<T>>>() {
-                        @Override
-                        public Flowable<Optional<T>> apply(Optional<T> it) throws Exception {
-                            return syncedStore.insertOrUpdate(it.get());
-                        }
-                    });
-
-            flowables.add(syncedStore.insert(item));
+        if (!hasSyncedStore()) {
+            return flowStorage;
         }
 
+        final List<Flowable<Optional<T>>> flowables = new ArrayList<>();
+        flowStorage = flowStorage
+                .onErrorResumeNext(new Function<Throwable, Flowable<Optional<T>>>() {
+                    @Override
+                    public Flowable<Optional<T>> apply(final Throwable throwable) throws Exception {
+                        return syncedStore.delete(item).flatMap(new Function<Integer, Flowable<Optional<T>>>() {
+                            @Override
+                            public Flowable<Optional<T>> apply(Integer zeroOrOne) throws Exception {
+                                return Flowable.error(throwable);
+                            }
+                        });
+                    }
+                })
+                .flatMap(new Function<Optional<T>, Flowable<Optional<T>>>() {
+                    @Override
+                    public Flowable<Optional<T>> apply(Optional<T> it) throws Exception {
+                        return syncedStore.insertOrUpdate(it.get());
+                    }
+                });
+
+        flowables.add(syncedStore.insert(item));
         flowables.add(flowStorage);
+
         return Flowable.concat(flowables);
     }
 
