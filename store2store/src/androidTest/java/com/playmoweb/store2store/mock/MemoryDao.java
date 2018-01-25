@@ -6,6 +6,7 @@ import com.playmoweb.store2store.utils.Filter;
 import com.playmoweb.store2store.utils.SortType;
 import com.playmoweb.store2store.utils.SortingMode;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,8 +46,17 @@ public class MemoryDao extends StoreDao<TestModel> {
 
     @Override
     public Flowable<Optional<TestModel>> getOne(Filter filter, SortingMode sortingMode) {
-        if(sortingMode != null && sortingMode.sort == SortType.DESCENDING){
-            return Flowable.just(Optional.wrap(models.get(models.size() - 1)));
+        if(sortingMode != null){
+            boolean reverse = false;
+            for(AbstractMap.SimpleEntry<String, SortType> e : sortingMode.entries){
+                if(e.getValue() == SortType.DESCENDING){
+                    reverse = true;
+                    break;
+                }
+            }
+            if(reverse) {
+                return Flowable.just(Optional.wrap(models.get(models.size() - 1)));
+            }
         }
         return Flowable.just(Optional.wrap(models.get(0)));
     }
