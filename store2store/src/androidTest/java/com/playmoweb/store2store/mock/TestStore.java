@@ -7,6 +7,7 @@ import com.playmoweb.store2store.utils.Filter;
 import com.playmoweb.store2store.utils.SortType;
 import com.playmoweb.store2store.utils.SortingMode;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -44,8 +45,17 @@ public class TestStore extends StoreService<TestModel> {
             list.add(new TestModel(20));
             list.add(new TestModel(30));
 
-            if(sortingMode != null && sortingMode.sort == SortType.DESCENDING){
-                Collections.reverse(list);
+            if(sortingMode != null){
+                boolean reverse = false;
+                for(AbstractMap.SimpleEntry<String, SortType> e : sortingMode.entries){
+                    if(e.getValue() == SortType.DESCENDING){
+                        reverse = true;
+                        break;
+                    }
+                }
+                if(reverse) {
+                    Collections.reverse(list);
+                }
             }
 
             return Flowable.just(Optional.wrap(list)).delay(1, TimeUnit.SECONDS);
