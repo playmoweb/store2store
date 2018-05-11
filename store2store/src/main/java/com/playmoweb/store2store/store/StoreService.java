@@ -203,7 +203,7 @@ public abstract class StoreService<T> extends StoreDao<T> {
     }
 
     @Override
-    public Flowable<Optional<T>> getById(final int id) {
+    public <S> Flowable<Optional<T>> getById(final S id) {
         Flowable<Optional<T>> flowStorage = dao.getById(id);
         if (!hasSyncedStore()) {
             return flowStorage;

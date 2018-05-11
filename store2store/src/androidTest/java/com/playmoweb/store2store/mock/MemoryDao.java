@@ -67,10 +67,10 @@ public class MemoryDao extends StoreDao<TestModel> {
     }
 
     @Override
-    public Flowable<Optional<TestModel>> getById(int id) {
+    public <S> Flowable<Optional<TestModel>> getById(S id) {
         TestModel t = null;
         for(TestModel tm : models) {
-            if(tm.getId() == id) {
+            if(id instanceof Integer && (Integer) tm.getId() == id) {
                 t = tm;
                 break;
             }

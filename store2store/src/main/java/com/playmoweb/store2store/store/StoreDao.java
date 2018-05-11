@@ -31,7 +31,7 @@ public abstract class StoreDao<T> {
         throw new UnsupportedOperationException("This method has not been implemented in the child class");
     }
 
-    public Flowable<Optional<T>> getById(final int id) {
+    public <S> Flowable<Optional<T>> getById(final S id) {
         throw new UnsupportedOperationException("This method has not been implemented in the child class");
     }
 
